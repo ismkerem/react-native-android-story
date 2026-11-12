@@ -1,9 +1,52 @@
-import { View, type ColorValue, type ViewProps } from 'react-native';
+import * as React from 'react';
+import { StyleSheet, View } from 'react-native';
+import type { InstagramStoryViewProps, InstagramStoryViewRef } from './types';
 
-type Props = ViewProps & {
-  color?: ColorValue;
-};
+export type {
+  InstagramStoryViewProps,
+  InstagramStoryViewRef,
+  OverScrollMode,
+  PageScrollEvent,
+  PageScrollState,
+  PageScrollStateChangedEvent,
+  PageSelectedEvent,
+} from './types';
 
-export function InstagramStoryView({ color, style, ...rest }: Props) {
-  return <View {...rest} style={[style, { backgroundColor: color }]} />;
-}
+export const InstagramStoryView = React.forwardRef<
+  InstagramStoryViewRef,
+  InstagramStoryViewProps
+>(({ children, initialPage = 0, style, ...rest }, ref) => {
+  const childArray = React.Children.toArray(children);
+  const [currentPage, setCurrentPage] = React.useState(initialPage);
+
+  React.useImperativeHandle(
+    ref,
+    () => ({
+      setPage(selectedPage: number) {
+        if (selectedPage >= 0 && selectedPage < childArray.length) {
+          setCurrentPage(selectedPage);
+        }
+      },
+      setPageWithoutAnimation(selectedPage: number) {
+        if (selectedPage >= 0 && selectedPage < childArray.length) {
+          setCurrentPage(selectedPage);
+        }
+      },
+    }),
+    [childArray.length]
+  );
+
+  return (
+    <View {...rest} style={[styles.container, style]}>
+      {childArray[currentPage] ?? null}
+    </View>
+  );
+});
+
+InstagramStoryView.displayName = 'InstagramStoryView';
+
+const styles = StyleSheet.create({
+  container: {
+    overflow: 'hidden',
+  },
+});

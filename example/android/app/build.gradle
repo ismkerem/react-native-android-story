@@ -78,6 +78,13 @@ android {
     compileSdk rootProject.ext.compileSdkVersion
 
     namespace "instagramstory.example"
+    if (System.getProperty("os.name").toLowerCase().contains("windows")) {
+        externalNativeBuild {
+            cmake {
+                buildStagingDirectory file("${System.getProperty('java.io.tmpdir')}/rn-igstory-cxx")
+            }
+        }
+    }
     defaultConfig {
         applicationId "instagramstory.example"
         minSdkVersion rootProject.ext.minSdkVersion
