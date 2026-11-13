@@ -40,7 +40,7 @@ export const InstagramStoryView = React.forwardRef<
     ref
   ) => {
     const nativeRef =
-      React.useRef<React.ElementRef<typeof NativeInstagramStoryView>>(null);
+      React.useRef<React.ComponentRef<typeof NativeInstagramStoryView>>(null);
 
     React.useImperativeHandle(
       ref,

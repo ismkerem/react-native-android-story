@@ -219,7 +219,9 @@ export function CustomCubePager() {
 | `swipeToCloseThreshold` | `number` | `120` | Vertical drag distance in pixels required to dismiss. |
 | `tapToNavigate` | `boolean` | `true` | Tap left/right areas of the screen to move to previous/next item. |
 | `pauseOnHold` | `boolean` | `true` | Pause the timer while pressing and holding the story. |
+| `hideOverlaysOnHold` | `boolean` | `true` | Hide progress bar, header, and footer overlays while holding the story so only story content is visible. |
 | `showProgressBar` | `boolean` | `true` | Show segmented progress bars at the top of each story. |
+| `showUser` | `boolean` | `true` | Show user avatar and username on the story view (set `false` to hide user info). |
 | `progressBarColor` | `string` | `'#FFFFFF'` | Filled progress bar color. |
 | `progressTrackColor` | `string` | `'rgba(255,255,255,0.3)'` | Background track color for progress segments. |
 | `backdropColor` | `string` | `'#000000'` | Backdrop color visible behind the viewer during swipe-down. |
@@ -231,7 +233,7 @@ export function CustomCubePager() {
 | `getItemDuration` | `(item, story) => number` | `item.duration ?? duration` | Override duration in milliseconds for an individual story item. |
 | `getItemImage` | `(item, story) => string \| undefined` | `resolveImageUri(item.imageUri ?? item.image ?? item.uri ?? item.url)` | Resolve an image URI for default item rendering. |
 | `renderItem` | `(info) => ReactNode` | Default full-screen image | Custom renderer for each story item (`{ item, story, itemIndex, storyIndex, isActive, isPaused, progress }`). |
-| `renderHeader` | `(info) => ReactNode` | Default avatar + title + close | Custom header renderer below the progress bar (`{ story, item, storyIndex, itemIndex, isActive, close }`). |
+| `renderHeader` | `(info) => ReactNode` | Default avatar + title + close | Custom header renderer below the progress bar (`{ story, item, storyIndex, itemIndex, isActive, showUser, close }`). |
 | `renderFooter` | `(info) => ReactNode` | — | Custom footer renderer (e.g. reply input, reactions). |
 | `onStoryChange` | `(storyIndex, story) => void` | — | Called when the active story group changes. |
 | `onItemChange` | `(itemIndex, item, storyIndex, story) => void` | — | Called when the active item inside a story group changes. |

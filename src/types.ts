@@ -117,6 +117,7 @@ export interface StoryRenderHeaderInfo<TStory, TItem> {
   storyIndex: number;
   itemIndex: number;
   isActive: boolean;
+  showUser: boolean;
   close: () => void;
 }
 
@@ -177,9 +178,17 @@ export interface InstagramStoryProps<
    */
   pauseOnHold?: boolean;
   /**
+   * Hide progress bar, header, and footer overlays while pressing and holding a story (default: true).
+   */
+  hideOverlaysOnHold?: boolean;
+  /**
    * Show progress bars at the top of each story (default: true).
    */
   showProgressBar?: boolean;
+  /**
+   * Show user avatar and username on the story view (default: true).
+   */
+  showUser?: boolean;
   /**
    * Filled progress bar color (default: '#FFFFFF').
    */

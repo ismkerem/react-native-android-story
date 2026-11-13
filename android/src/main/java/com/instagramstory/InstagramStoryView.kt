@@ -11,7 +11,6 @@ import androidx.viewpager2.widget.ViewPager2
 import com.facebook.react.bridge.Dynamic
 import com.facebook.react.bridge.ReactContext
 import com.facebook.react.uimanager.UIManagerHelper
-import com.facebook.react.uimanager.common.ViewUtil
 import com.instagramstory.events.PageScrollEvent
 import com.instagramstory.events.PageScrollStateChangedEvent
 import com.instagramstory.events.PageSelectedEvent
@@ -110,7 +109,7 @@ class InstagramStoryView(context: Context) : FrameLayout(context) {
 
       registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
         override fun onPageSelected(position: Int) {
-          dispatchEvent(PageSelectedEvent(getSurfaceId(), id, position))
+          dispatchEvent(PageSelectedEvent(getSurfaceId(), this@InstagramStoryView.id, position))
         }
 
         override fun onPageScrolled(
@@ -118,7 +117,14 @@ class InstagramStoryView(context: Context) : FrameLayout(context) {
           positionOffset: Float,
           positionOffsetPixels: Int
         ) {
-          dispatchEvent(PageScrollEvent(getSurfaceId(), id, position, positionOffset.toDouble()))
+          dispatchEvent(
+            PageScrollEvent(
+              getSurfaceId(),
+              this@InstagramStoryView.id,
+              position,
+              positionOffset.toDouble()
+            )
+          )
         }
 
         override fun onPageScrollStateChanged(state: Int) {
@@ -127,7 +133,9 @@ class InstagramStoryView(context: Context) : FrameLayout(context) {
             ViewPager2.SCROLL_STATE_SETTLING -> "settling"
             else -> "idle"
           }
-          dispatchEvent(PageScrollStateChangedEvent(getSurfaceId(), id, stateName))
+          dispatchEvent(
+            PageScrollStateChangedEvent(getSurfaceId(), this@InstagramStoryView.id, stateName)
+          )
         }
       })
     }
@@ -267,8 +275,7 @@ class InstagramStoryView(context: Context) : FrameLayout(context) {
 
   private fun dispatchEvent(event: com.facebook.react.uimanager.events.Event<*>) {
     val reactContext = context as? ReactContext ?: return
-    UIManagerHelper.getEventDispatcher(reactContext, ViewUtil.getUIManagerType(id))
-      ?.dispatchEvent(event)
+    UIManagerHelper.getEventDispatcher(reactContext)?.dispatchEvent(event)
   }
 
   private class PageViewHolder(val container: FrameLayout) : RecyclerView.ViewHolder(container)
