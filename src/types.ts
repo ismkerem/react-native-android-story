@@ -24,12 +24,19 @@ export type PageScrollStateChangedEvent = Readonly<{
 
 export type OverScrollMode = 'auto' | 'always' | 'never';
 
+export type StoryImageSource = string | number | Readonly<{ uri: string }>;
+
 export interface InstagramStoryViewRef {
   setPage: (selectedPage: number) => void;
   setPageWithoutAnimation: (selectedPage: number) => void;
 }
 
 export interface InstagramStoryViewProps extends ViewProps {
+  /**
+   * Flexible story data object (or array of story objects) passed directly to the native view.
+   * Supports custom backend JSON structures containing fundamental properties like `avatarUri`, `userUri`, and `imageUri`.
+   */
+  storyData?: Record<string, unknown> | readonly Record<string, unknown>[];
   /**
    * Initial story page index when mounted (default: 0).
    */
@@ -75,7 +82,8 @@ export interface InstagramStoryViewProps extends ViewProps {
  */
 export interface StoryItemData {
   id?: string | number;
-  image?: string;
+  imageUri?: StoryImageSource;
+  image?: StoryImageSource;
   uri?: string;
   url?: string;
   duration?: number;
@@ -87,6 +95,8 @@ export interface StoryItemData {
  */
 export interface StoryGroupData<TItem = StoryItemData> {
   id?: string | number;
+  avatarUri?: StoryImageSource;
+  userUri?: StoryImageSource;
   items?: readonly TItem[];
   [key: string]: unknown;
 }
@@ -110,6 +120,14 @@ export interface StoryRenderHeaderInfo<TStory, TItem> {
   close: () => void;
 }
 
+export interface StoryItemSeenInfo<TStory, TItem> {
+  story: TStory;
+  item: TItem;
+  storyIndex: number;
+  itemIndex: number;
+  isLastItem: boolean;
+}
+
 export interface InstagramStoryProps<
   TStory extends Record<string, unknown> = StoryGroupData,
   TItem extends Record<string, unknown> = StoryItemData,
@@ -130,6 +148,10 @@ export interface InstagramStoryProps<
    * Initial item index inside the initial story group (default: 0).
    */
   initialItemIndex?: number;
+  /**
+   * Resolve the starting item index for any story (e.g. to resume from last unwatched item).
+   */
+  getInitialItemIndex?: (story: TStory, storyIndex: number) => number;
   /**
    * Auto-advance duration in milliseconds per story item (default: 10000 = 10s).
    */
@@ -195,7 +217,7 @@ export interface InstagramStoryProps<
    */
   getItemDuration?: (item: TItem, story: TStory) => number;
   /**
-   * Extract image URI for default item rendering (defaults to `item.image ?? item.uri ?? item.url`).
+   * Extract image URI for default item rendering (defaults to `item.imageUri ?? item.image ?? item.uri ?? item.url`).
    */
   getItemImage?: (item: TItem, story: TStory) => string | undefined;
   /**
@@ -225,6 +247,10 @@ export interface InstagramStoryProps<
     storyIndex: number,
     story: TStory
   ) => void;
+  /**
+   * Called when a story item becomes visible/seen while the viewer is open.
+   */
+  onStoryItemSeen?: (info: StoryItemSeenInfo<TStory, TItem>) => void;
   /**
    * Called when the user swipes down to close or taps close.
    */

@@ -1,4 +1,3 @@
-import * as React from 'react';
 import {
   Platform,
   Pressable,
@@ -10,12 +9,14 @@ import {
 } from 'react-native';
 import {
   InstagramStory,
+  useStoryProgress,
   type StoryGroupData,
   type StoryItemData,
 } from 'react-native-instagram-story';
 
 interface CustomStoryItem extends StoryItemData {
   id: string;
+  imageUri?: string;
   backgroundColor: string;
   badgeColor: string;
   title: string;
@@ -25,6 +26,8 @@ interface CustomStoryItem extends StoryItemData {
 interface CustomStoryUser extends StoryGroupData<CustomStoryItem> {
   id: string;
   username: string;
+  avatarUri?: string;
+  userUri?: string;
   avatarBg: string;
   initials: string;
   items: CustomStoryItem[];
@@ -34,22 +37,46 @@ const STORY_DATA: CustomStoryUser[] = [
   {
     id: 'user-1',
     username: 'alex.dev',
+    avatarUri: 'https://example.com/avatars/alex.jpg',
+    userUri: 'https://example.com/users/alex',
     avatarBg: '#4F46E5',
     initials: 'AD',
     items: [
       {
         id: '1-1',
+        imageUri: 'https://example.com/stories/alex-1.jpg',
         backgroundColor: '#4F46E5',
         badgeColor: '#C7D2FE',
         title: 'Story 1 · Item 1',
-        caption: 'Auto-advances in 10 seconds · Tap right to skip ahead',
+        caption: 'Tap right to advance to Item 2 (or wait 10s)',
       },
       {
         id: '1-2',
         backgroundColor: '#059669',
         badgeColor: '#A7F3D0',
         title: 'Story 1 · Item 2',
-        caption: 'Hold anywhere to pause · Swipe horizontally for 3D cube',
+        caption: 'Tap right to advance to Item 3',
+      },
+      {
+        id: '1-3',
+        backgroundColor: '#0284C7',
+        badgeColor: '#BAE6FD',
+        title: 'Story 1 · Item 3',
+        caption: 'Close now (✕ or swipe down) — reopening resumes at Item 4!',
+      },
+      {
+        id: '1-4',
+        backgroundColor: '#D97706',
+        badgeColor: '#FDE68A',
+        title: 'Story 1 · Item 4',
+        caption: 'Resumed from 4th item! Tap right for the final item',
+      },
+      {
+        id: '1-5',
+        backgroundColor: '#9333EA',
+        badgeColor: '#E9D5FF',
+        title: 'Story 1 · Item 5',
+        caption: 'Last item! Finishing or closing turns AD gray & moves to end',
       },
     ],
   },
@@ -83,8 +110,8 @@ const STORY_DATA: CustomStoryUser[] = [
       },
       {
         id: '3-2',
-        backgroundColor: '#0284C7',
-        badgeColor: '#BAE6FD',
+        backgroundColor: '#0D9488',
+        badgeColor: '#99F6E4',
         title: 'Story 3 · Item 2',
         caption: 'Native Fabric ViewPager2 3D perspective on Android',
       },
@@ -111,20 +138,26 @@ const STATUS_BAR_PADDING =
   Platform.OS === 'android' ? (StatusBar.currentHeight ?? 24) : 44;
 
 export default function App() {
-  const [viewerVisible, setViewerVisible] = React.useState(false);
-  const [selectedUserIndex, setSelectedUserIndex] = React.useState(0);
-
-  const openStory = (index: number) => {
-    setSelectedUserIndex(index);
-    setViewerVisible(true);
-  };
+  const {
+    orderedStories,
+    isOpen,
+    initialStoryIndex,
+    openStory,
+    closeStory,
+    isStoryWatched,
+    getInitialItemIndex,
+    markItemSeen,
+    resetProgress,
+  } = useStoryProgress<CustomStoryUser, CustomStoryItem>({
+    stories: STORY_DATA,
+  });
 
   return (
     <View style={styles.root}>
       <StatusBar
         translucent
         backgroundColor="transparent"
-        barStyle={viewerVisible ? 'light-content' : 'dark-content'}
+        barStyle={isOpen ? 'light-content' : 'dark-content'}
       />
 
       <View style={styles.feedContainer}>
@@ -135,49 +168,71 @@ export default function App() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.avatarList}
         >
-          {STORY_DATA.map((user, index) => (
-            <Pressable
-              key={user.id}
-              style={styles.avatarItem}
-              onPress={() => openStory(index)}
-            >
-              <View style={styles.avatarRing}>
+          {orderedStories.map((user, index) => {
+            const watched = isStoryWatched(user);
+            return (
+              <Pressable
+                key={user.id}
+                style={styles.avatarItem}
+                onPress={() => openStory(index)}
+              >
                 <View
                   style={[
-                    styles.avatarCircle,
-                    { backgroundColor: user.avatarBg },
+                    styles.avatarRing,
+                    watched
+                      ? styles.avatarRingWatched
+                      : styles.avatarRingActive,
                   ]}
                 >
-                  <Text style={styles.avatarInitials}>{user.initials}</Text>
+                  <View
+                    style={[
+                      styles.avatarCircle,
+                      { backgroundColor: user.avatarBg },
+                    ]}
+                  >
+                    <Text style={styles.avatarInitials}>{user.initials}</Text>
+                  </View>
                 </View>
-              </View>
-              <Text style={styles.avatarLabel} numberOfLines={1}>
-                {user.username}
-              </Text>
-            </Pressable>
-          ))}
+                <Text
+                  style={[
+                    styles.avatarLabel,
+                    watched && styles.avatarLabelWatched,
+                  ]}
+                  numberOfLines={1}
+                >
+                  {user.username}
+                </Text>
+              </Pressable>
+            );
+          })}
         </ScrollView>
 
         <View style={styles.hintCard}>
-          <Text style={styles.hintTitle}>Tap any story avatar above</Text>
+          <Text style={styles.hintTitle}>Story Progress & Resume</Text>
           <Text style={styles.hintBody}>
-            • Auto-next after 10 seconds{'\n'}• Swipe left/right for native
-            Android 3D cube{'\n'}• Swipe down to close story{'\n'}• Hold to
-            pause · Tap left/right to navigate
+            • Tap alex.dev (5 items), view up to Item 3, then close{'\n'}•
+            Reopen alex.dev to resume directly at Item 4{'\n'}• Finish all items
+            to turn the ring gray & move it to the end{'\n'}• Auto-next every
+            10s · Swipe left/right for 3D cube · Swipe down to close
           </Text>
+          <Pressable style={styles.resetButton} onPress={resetProgress}>
+            <Text style={styles.resetButtonText}>Reset Watch Progress</Text>
+          </Pressable>
         </View>
       </View>
 
-      {viewerVisible && (
+      {isOpen && (
         <View style={styles.modalOverlay}>
           <InstagramStory<CustomStoryUser, CustomStoryItem>
-            stories={STORY_DATA}
-            visible={viewerVisible}
-            initialStoryIndex={selectedUserIndex}
+            stories={orderedStories}
+            visible={isOpen}
+            initialStoryIndex={initialStoryIndex}
+            getInitialItemIndex={getInitialItemIndex}
+            onStoryItemSeen={markItemSeen}
             duration={10000}
             backdropColor="#0F172A"
             swipeToClose
-            onClose={() => setViewerVisible(false)}
+            onClose={closeStory}
             renderHeader={({ story, itemIndex, close }) => (
               <View style={styles.storyHeader}>
                 <View style={styles.storyUserRow}>
@@ -232,7 +287,7 @@ export default function App() {
                 <Text style={styles.storyCaption}>{item.caption}</Text>
 
                 <Text style={styles.storyCounter}>
-                  User {storyIndex + 1}/{STORY_DATA.length} · Slide{' '}
+                  User {storyIndex + 1}/{orderedStories.length} · Slide{' '}
                   {itemIndex + 1}/{story.items.length}
                 </Text>
               </View>
@@ -274,8 +329,13 @@ const styles = StyleSheet.create({
     borderRadius: 36,
     padding: 3,
     borderWidth: 2.5,
-    borderColor: '#E1306C',
     marginBottom: 6,
+  },
+  avatarRingActive: {
+    borderColor: '#E1306C',
+  },
+  avatarRingWatched: {
+    borderColor: '#9CA3AF',
   },
   avatarCircle: {
     flex: 1,
@@ -292,6 +352,9 @@ const styles = StyleSheet.create({
     color: '#1E293B',
     fontSize: 12,
     fontWeight: '600',
+  },
+  avatarLabelWatched: {
+    color: '#9CA3AF',
   },
   hintCard: {
     marginHorizontal: 16,
@@ -312,6 +375,19 @@ const styles = StyleSheet.create({
     color: '#475569',
     fontSize: 14,
     lineHeight: 22,
+  },
+  resetButton: {
+    marginTop: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+    backgroundColor: '#EEF2FF',
+    alignSelf: 'flex-start',
+  },
+  resetButtonText: {
+    color: '#4F46E5',
+    fontSize: 13,
+    fontWeight: '700',
   },
   modalOverlay: {
     position: 'absolute',

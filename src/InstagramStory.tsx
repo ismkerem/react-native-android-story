@@ -14,6 +14,7 @@ import {
   type NativeSyntheticEvent,
 } from 'react-native';
 import { InstagramStoryView } from './InstagramStoryView';
+import { resolveImageUri } from './resolveImageUri';
 import type {
   InstagramStoryProps,
   InstagramStoryViewRef,
@@ -90,6 +91,7 @@ export function InstagramStory<
   visible = true,
   initialStoryIndex = 0,
   initialItemIndex = 0,
+  getInitialItemIndex,
   duration = DEFAULT_DURATION,
   autoPlay = true,
   swipeToClose = true,
@@ -112,6 +114,7 @@ export function InstagramStory<
   renderFooter,
   onStoryChange,
   onItemChange,
+  onStoryItemSeen,
   onClose,
   onFinish,
 }: InstagramStoryProps<TStory, TItem>) {
@@ -124,24 +127,6 @@ export function InstagramStory<
     Math.min(initialStoryIndex, Math.max(0, stories.length - 1))
   );
 
-  const [activeStoryIndex, setActiveStoryIndex] =
-    React.useState(clampedInitialStory);
-  const [itemIndices, setItemIndices] = React.useState<Record<number, number>>(
-    () => ({ [clampedInitialStory]: Math.max(0, initialItemIndex) })
-  );
-  const [scrollState, setScrollState] = React.useState<PageScrollState>('idle');
-  const [isHolding, setIsHolding] = React.useState(false);
-  const [isSwipingDown, setIsSwipingDown] = React.useState(false);
-
-  const progressAnim = React.useRef(new Animated.Value(0)).current;
-  const remainingRatioRef = React.useRef(1);
-  const activeKeyRef = React.useRef('');
-  const wasLongPressRef = React.useRef(false);
-
-  const translateY = React.useRef(new Animated.Value(0)).current;
-  const scale = React.useRef(new Animated.Value(1)).current;
-  const backdropOpacity = React.useRef(new Animated.Value(1)).current;
-
   const resolveItems = React.useCallback(
     (story: TStory): readonly TItem[] => {
       if (getItems) return getItems(story);
@@ -150,6 +135,45 @@ export function InstagramStory<
     },
     [getItems]
   );
+
+  const buildInitialItemIndices = React.useCallback(
+    (targetStoryIndex: number): Record<number, number> => {
+      const indices: Record<number, number> = {};
+      stories.forEach((story, idx) => {
+        const items = resolveItems(story);
+        const requested = getInitialItemIndex
+          ? getInitialItemIndex(story, idx)
+          : idx === targetStoryIndex
+            ? initialItemIndex
+            : 0;
+        indices[idx] = Math.max(
+          0,
+          Math.min(requested, Math.max(0, items.length - 1))
+        );
+      });
+      return indices;
+    },
+    [getInitialItemIndex, initialItemIndex, resolveItems, stories]
+  );
+
+  const [activeStoryIndex, setActiveStoryIndex] =
+    React.useState(clampedInitialStory);
+  const [itemIndices, setItemIndices] = React.useState<Record<number, number>>(
+    () => buildInitialItemIndices(clampedInitialStory)
+  );
+  const [scrollState, setScrollState] = React.useState<PageScrollState>('idle');
+  const [isHolding, setIsHolding] = React.useState(false);
+  const [isSwipingDown, setIsSwipingDown] = React.useState(false);
+
+  const progressAnim = React.useRef(new Animated.Value(0)).current;
+  const remainingRatioRef = React.useRef(1);
+  const activeKeyRef = React.useRef('');
+  const lastSeenKeyRef = React.useRef('');
+  const wasLongPressRef = React.useRef(false);
+
+  const translateY = React.useRef(new Animated.Value(0)).current;
+  const scale = React.useRef(new Animated.Value(1)).current;
+  const backdropOpacity = React.useRef(new Animated.Value(1)).current;
 
   const resolveItemDuration = React.useCallback(
     (item: TItem, story: TStory): number => {
@@ -166,10 +190,12 @@ export function InstagramStory<
     (item: TItem, story: TStory): string | undefined => {
       if (getItemImage) return getItemImage(item, story);
       const record = item as StoryItemData;
-      if (typeof record.image === 'string') return record.image;
-      if (typeof record.uri === 'string') return record.uri;
-      if (typeof record.url === 'string') return record.url;
-      return undefined;
+      return (
+        resolveImageUri(record.imageUri) ??
+        resolveImageUri(record.image) ??
+        resolveImageUri(record.uri) ??
+        resolveImageUri(record.url)
+      );
     },
     [getItemImage]
   );
@@ -192,10 +218,11 @@ export function InstagramStory<
         Math.min(initialStoryIndex, Math.max(0, stories.length - 1))
       );
       setActiveStoryIndex(nextInitial);
-      setItemIndices({ [nextInitial]: Math.max(0, initialItemIndex) });
+      setItemIndices(buildInitialItemIndices(nextInitial));
       setIsHolding(false);
       setIsSwipingDown(false);
       setScrollState('idle');
+      lastSeenKeyRef.current = '';
       progressAnim.setValue(0);
       remainingRatioRef.current = 1;
       translateY.setValue(0);
@@ -205,7 +232,7 @@ export function InstagramStory<
     prevVisibleRef.current = visible;
   }, [
     backdropOpacity,
-    initialItemIndex,
+    buildInitialItemIndices,
     initialStoryIndex,
     progressAnim,
     scale,
@@ -227,6 +254,28 @@ export function InstagramStory<
   const activeItem = activeItems[activeItemIndex];
 
   const isPaused = isHolding || isSwipingDown || scrollState !== 'idle';
+
+  React.useEffect(() => {
+    if (!visible || !activeStory || !activeItem) return;
+    const seenKey = `${activeStoryIndex}:${activeItemIndex}`;
+    if (lastSeenKeyRef.current === seenKey) return;
+    lastSeenKeyRef.current = seenKey;
+    onStoryItemSeen?.({
+      story: activeStory,
+      item: activeItem,
+      storyIndex: activeStoryIndex,
+      itemIndex: activeItemIndex,
+      isLastItem: activeItemIndex >= activeItems.length - 1,
+    });
+  }, [
+    activeItem,
+    activeItemIndex,
+    activeItems.length,
+    activeStory,
+    activeStoryIndex,
+    onStoryItemSeen,
+    visible,
+  ]);
 
   const closeWithAnimation = React.useCallback(() => {
     Animated.parallel([
@@ -505,6 +554,8 @@ export function InstagramStory<
     goNext();
   }, [goNext, tapToNavigate]);
 
+  const nativeStoryData = React.useMemo(() => ({ stories }), [stories]);
+
   if (!visible || stories.length === 0) {
     return null;
   }
@@ -533,6 +584,7 @@ export function InstagramStory<
         <InstagramStoryView
           ref={storyViewRef}
           style={styles.pager}
+          storyData={nativeStoryData}
           initialPage={clampedInitialStory}
           perspective={perspective}
           cubeAngle={cubeAngle}
@@ -558,6 +610,9 @@ export function InstagramStory<
                 : typeof story.name === 'string'
                   ? story.name
                   : undefined;
+            const storyAvatarUri =
+              resolveImageUri((story as StoryGroupData).avatarUri) ??
+              resolveImageUri((story as StoryGroupData).userUri);
 
             return (
               <View
@@ -648,9 +703,17 @@ export function InstagramStory<
                     })
                   ) : (
                     <View style={styles.defaultHeader} pointerEvents="box-none">
-                      <Text style={styles.defaultHeaderTitle}>
-                        {storyTitle ?? ''}
-                      </Text>
+                      <View style={styles.defaultHeaderUser}>
+                        {storyAvatarUri && (
+                          <Image
+                            source={{ uri: storyAvatarUri }}
+                            style={styles.defaultHeaderAvatar}
+                          />
+                        )}
+                        <Text style={styles.defaultHeaderTitle}>
+                          {storyTitle ?? ''}
+                        </Text>
+                      </View>
                       {onClose && (
                         <Pressable
                           style={styles.closeButton}
@@ -770,6 +833,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginTop: 10,
+  },
+  defaultHeaderUser: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  defaultHeaderAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#FFFFFF',
   },
   defaultHeaderTitle: {
     color: '#FFFFFF',

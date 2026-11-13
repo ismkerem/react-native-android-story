@@ -8,6 +8,7 @@ import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
+import com.facebook.react.bridge.Dynamic
 import com.facebook.react.bridge.ReactContext
 import com.facebook.react.uimanager.UIManagerHelper
 import com.facebook.react.uimanager.common.ViewUtil
@@ -29,6 +30,7 @@ class InstagramStoryView(context: Context) : FrameLayout(context) {
   private var perspectiveMultiplier = DEFAULT_PERSPECTIVE
   private var cubeRotationAngle = DEFAULT_CUBE_ANGLE
   private var scrollEnabledProp = true
+  private var storyData: StoryDataPayload? = null
 
   private val touchSlop = ViewConfiguration.get(context).scaledTouchSlop
   private var downX = 0f
@@ -209,6 +211,12 @@ class InstagramStoryView(context: Context) : FrameLayout(context) {
     pagerAdapter.notifyDataSetChanged()
     requestLayout()
   }
+
+  fun setStoryData(value: Dynamic) {
+    storyData = StoryDataParser.parse(value)
+  }
+
+  fun getStoryData(): StoryDataPayload? = storyData
 
   fun setInitialPage(page: Int) {
     initialPageIndex = max(0, page)

@@ -1,6 +1,7 @@
 package com.instagramstory
 
 import android.view.View
+import com.facebook.react.bridge.Dynamic
 import com.facebook.react.module.annotations.ReactModule
 import com.facebook.react.uimanager.ThemedReactContext
 import com.facebook.react.uimanager.ViewGroupManager
@@ -49,6 +50,11 @@ class InstagramStoryViewManager :
   }
 
   override fun needsCustomLayoutForChildren(): Boolean = true
+
+  @ReactProp(name = "storyData")
+  override fun setStoryData(view: InstagramStoryView, value: Dynamic) {
+    view.setStoryData(value)
+  }
 
   @ReactProp(name = "initialPage", defaultInt = 0)
   override fun setInitialPage(view: InstagramStoryView, value: Int) {
