@@ -21,6 +21,7 @@ export type PageScrollStateChangedEventData = Readonly<{
 }>;
 
 export interface NativeProps extends ViewProps {
+  storyData?: CodegenTypes.UnsafeMixed;
   initialPage?: CodegenTypes.Int32;
   scrollEnabled?: boolean;
   offscreenPageLimit?: CodegenTypes.Int32;

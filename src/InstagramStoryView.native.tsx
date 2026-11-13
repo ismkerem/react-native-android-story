@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import NativeInstagramStoryView, {
   Commands,
 } from './InstagramStoryViewNativeComponent';
+import { normalizeNativeStoryData } from './resolveImageUri';
 import type {
   InstagramStoryViewProps,
   InstagramStoryViewRef,
@@ -26,6 +27,7 @@ export const InstagramStoryView = React.forwardRef<
   (
     {
       children,
+      storyData,
       initialPage = 0,
       scrollEnabled = true,
       offscreenPageLimit = 1,
@@ -87,9 +89,18 @@ export const InstagramStoryView = React.forwardRef<
       [onPageScrollStateChanged]
     );
 
+    const normalizedStoryData = React.useMemo(
+      () =>
+        storyData !== undefined
+          ? normalizeNativeStoryData(storyData)
+          : undefined,
+      [storyData]
+    );
+
     return (
       <NativeInstagramStoryView
         ref={nativeRef}
+        storyData={normalizedStoryData}
         initialPage={initialPage}
         scrollEnabled={scrollEnabled}
         offscreenPageLimit={offscreenPageLimit}
