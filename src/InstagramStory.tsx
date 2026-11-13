@@ -98,7 +98,9 @@ export function InstagramStory<
   swipeToCloseThreshold = DEFAULT_SWIPE_THRESHOLD,
   tapToNavigate = true,
   pauseOnHold = true,
+  hideOverlaysOnHold = true,
   showProgressBar = true,
+  showUser = true,
   progressBarColor = '#FFFFFF',
   progressTrackColor = 'rgba(255, 255, 255, 0.32)',
   backdropColor = '#000000',
@@ -164,6 +166,7 @@ export function InstagramStory<
   const [scrollState, setScrollState] = React.useState<PageScrollState>('idle');
   const [isHolding, setIsHolding] = React.useState(false);
   const [isSwipingDown, setIsSwipingDown] = React.useState(false);
+  const [replayTick, setReplayTick] = React.useState(0);
 
   const progressAnim = React.useRef(new Animated.Value(0)).current;
   const remainingRatioRef = React.useRef(1);
@@ -174,6 +177,7 @@ export function InstagramStory<
   const translateY = React.useRef(new Animated.Value(0)).current;
   const scale = React.useRef(new Animated.Value(1)).current;
   const backdropOpacity = React.useRef(new Animated.Value(1)).current;
+  const overlayOpacity = React.useRef(new Animated.Value(1)).current;
 
   const resolveItemDuration = React.useCallback(
     (item: TItem, story: TStory): number => {
@@ -228,12 +232,14 @@ export function InstagramStory<
       translateY.setValue(0);
       scale.setValue(1);
       backdropOpacity.setValue(1);
+      overlayOpacity.setValue(1);
     }
     prevVisibleRef.current = visible;
   }, [
     backdropOpacity,
     buildInitialItemIndices,
     initialStoryIndex,
+    overlayOpacity,
     progressAnim,
     scale,
     stories.length,
@@ -253,7 +259,17 @@ export function InstagramStory<
   );
   const activeItem = activeItems[activeItemIndex];
 
-  const isPaused = isHolding || isSwipingDown || scrollState !== 'idle';
+  const isPaused =
+    (pauseOnHold && isHolding) || isSwipingDown || scrollState !== 'idle';
+  const hideOverlays = hideOverlaysOnHold && isHolding;
+
+  React.useEffect(() => {
+    Animated.timing(overlayOpacity, {
+      toValue: hideOverlays ? 0 : 1,
+      duration: 150,
+      useNativeDriver: true,
+    }).start();
+  }, [hideOverlays, overlayOpacity]);
 
   React.useEffect(() => {
     if (!visible || !activeStory || !activeItem) return;
@@ -350,9 +366,7 @@ export function InstagramStory<
     if (activeStoryIndex > 0) {
       storyViewRef.current?.setPage(activeStoryIndex - 1);
     } else {
-      // Restart first item from 0
-      remainingRatioRef.current = 1;
-      progressAnim.setValue(0);
+      setReplayTick((tick) => tick + 1);
     }
   }, [
     activeItemIndex,
@@ -360,14 +374,13 @@ export function InstagramStory<
     activeStory,
     activeStoryIndex,
     onItemChange,
-    progressAnim,
   ]);
 
   const goNextRef = React.useRef(goNext);
   goNextRef.current = goNext;
 
   // Auto-next 10s timer
-  const currentKey = `${activeStoryIndex}:${activeItemIndex}`;
+  const currentKey = `${activeStoryIndex}:${activeItemIndex}:${replayTick}`;
   const activeDuration =
     activeStory && activeItem
       ? resolveItemDuration(activeItem, activeStory)
@@ -533,10 +546,10 @@ export function InstagramStory<
   }, []);
 
   const handleLongPress = React.useCallback(() => {
-    if (!pauseOnHold) return;
+    if (!pauseOnHold && !hideOverlaysOnHold) return;
     wasLongPressRef.current = true;
     setIsHolding(true);
-  }, [pauseOnHold]);
+  }, [hideOverlaysOnHold, pauseOnHold]);
 
   const handlePressOut = React.useCallback(() => {
     if (isHolding) {
@@ -647,7 +660,7 @@ export function InstagramStory<
                 </View>
 
                 {/* Tap Left / Tap Right / Hold-to-Pause Layer */}
-                {(tapToNavigate || pauseOnHold) && (
+                {(tapToNavigate || pauseOnHold || hideOverlaysOnHold) && (
                   <View style={styles.touchLayer} pointerEvents="box-none">
                     <Pressable
                       style={styles.leftTouchZone}
@@ -669,7 +682,10 @@ export function InstagramStory<
                 )}
 
                 {/* Progress Bar & Header Overlay */}
-                <View style={styles.topOverlay} pointerEvents="box-none">
+                <Animated.View
+                  style={[styles.topOverlay, { opacity: overlayOpacity }]}
+                  pointerEvents={hideOverlays ? 'none' : 'box-none'}
+                >
                   {showProgressBar && items.length > 0 && (
                     <View style={styles.progressRow} pointerEvents="none">
                       {items.map((item, idx) => {
@@ -699,21 +715,26 @@ export function InstagramStory<
                       storyIndex,
                       itemIndex: currentIdx,
                       isActive: isActiveStory,
+                      showUser,
                       close: closeWithAnimation,
                     })
                   ) : (
                     <View style={styles.defaultHeader} pointerEvents="box-none">
-                      <View style={styles.defaultHeaderUser}>
-                        {storyAvatarUri && (
-                          <Image
-                            source={{ uri: storyAvatarUri }}
-                            style={styles.defaultHeaderAvatar}
-                          />
-                        )}
-                        <Text style={styles.defaultHeaderTitle}>
-                          {storyTitle ?? ''}
-                        </Text>
-                      </View>
+                      {showUser ? (
+                        <View style={styles.defaultHeaderUser}>
+                          {storyAvatarUri && (
+                            <Image
+                              source={{ uri: storyAvatarUri }}
+                              style={styles.defaultHeaderAvatar}
+                            />
+                          )}
+                          <Text style={styles.defaultHeaderTitle}>
+                            {storyTitle ?? ''}
+                          </Text>
+                        </View>
+                      ) : (
+                        <View />
+                      )}
                       {onClose && (
                         <Pressable
                           style={styles.closeButton}
@@ -725,11 +746,14 @@ export function InstagramStory<
                       )}
                     </View>
                   )}
-                </View>
+                </Animated.View>
 
                 {/* Optional Footer Overlay */}
                 {renderFooter && currentItem && (
-                  <View style={styles.bottomOverlay} pointerEvents="box-none">
+                  <Animated.View
+                    style={[styles.bottomOverlay, { opacity: overlayOpacity }]}
+                    pointerEvents={hideOverlays ? 'none' : 'box-none'}
+                  >
                     {renderFooter({
                       item: currentItem,
                       story,
@@ -739,7 +763,7 @@ export function InstagramStory<
                       isPaused: isActiveStory && isPaused,
                       progress: progressAnim,
                     })}
-                  </View>
+                  </Animated.View>
                 )}
               </View>
             );
@@ -796,10 +820,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   leftTouchZone: {
-    flex: 3,
+    flex: 1,
   },
   rightTouchZone: {
-    flex: 7,
+    flex: 1,
   },
   topOverlay: {
     position: 'absolute',
