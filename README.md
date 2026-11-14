@@ -5,19 +5,20 @@ React Native Instagram Story library powered by a native Android Fabric `ViewPag
 ## Features
 
 - **Native 3D Cube Transition (Android Fabric):** Smooth page-to-page 3D cube rotation driven natively via `ViewPager2` and a custom `PageTransformer` (`perspective`, `cubeAngle`).
-- **Flexible JSON & Mixed Image Sources:** Pass any custom backend JSON object shape. Supports both remote URLs, `{ uri }` objects, and local `require(...)` assets for `avatarUri`, `userUri`, and `imageUri`, forwarding normalized `storyData` directly to the native view.
+- **Image & Video Story Support (Zero Extra Dependencies):** Supports both image and video stories out of the box (`videoUri`, `video`, `type: 'video'`, `mediaType: 'video'`, or video URL extensions), powered by Android's built-in native player (`TextureView` + `MediaPlayer`) with automatic progress bar synchronization, buffering indicator, poster thumbnails, pause-on-hold, and optional custom `renderVideo`.
+- **Flexible JSON & Mixed Media Sources:** Pass any custom backend JSON object shape. Supports both remote URLs, `{ uri }` objects, and local `require(...)` assets for `avatarUri`, `userUri`, `imageUri`, `videoUri`, `video`, `posterUri`, and `thumbnailUri`, forwarding normalized `storyData` directly to the native view.
 - **Auto-Next & Gesture Controls:**
-  - Configurable auto-advance timer (default `10000` ms / 10 seconds per story item)
+  - Configurable auto-advance timer (default `10000` ms / 10 seconds per image item, or natural video duration for video stories)
   - Tap left/right edges to navigate previous/next
-  - Press and hold to pause progress
+  - Press and hold to pause progress (and pause video playback)
   - Swipe down to close with customizable drag threshold
 - **Watch Progress, Resume & Story Ordering (`useStoryProgress`):**
   - Tracks seen story items per avatar
   - Resumes an avatar from its first unwatched story item when reopened
   - Moves fully watched avatars to the end of `orderedStories` when the viewer closes (so you can render their ring gray)
-- **Custom Rendering:** Full control over story item content (`renderItem`), header (`renderHeader`), footer (`renderFooter`), and per-item duration (`getItemDuration`).
+- **Custom Rendering:** Full control over story item content (`renderItem`), video player (`renderVideo`), header (`renderHeader`), footer (`renderFooter`), and per-item duration (`getItemDuration`).
 
-> **Platform note:** Native 3D cube transitions and `storyData` parsing are implemented for **Android (New Architecture / Fabric)**.
+> **Platform note:** Built specifically for **Android (New Architecture / Fabric)**.
 
 ## Installation
 
@@ -40,7 +41,14 @@ yarn add react-native-instagram-story
 
 ```tsx
 import * as React from 'react';
-import { Image, Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
+import {
+  Image,
+  Pressable,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import {
   InstagramStory,
   resolveImageUri,
@@ -49,7 +57,10 @@ import {
 
 interface CustomStoryItem {
   id: string;
-  imageUri: string | number;
+  type?: 'image' | 'video';
+  imageUri?: string | number;
+  videoUri?: string | number;
+  posterUri?: string | number;
   caption?: string;
   duration?: number;
   [key: string]: unknown;
@@ -81,6 +92,13 @@ const STORIES: CustomStoryUser[] = [
         imageUri: require('./assets/local-story.png'),
         caption: 'Local asset story',
         duration: 8000,
+      },
+      {
+        id: 'a3',
+        type: 'video',
+        videoUri: 'https://example.com/stories/a3.mp4',
+        posterUri: 'https://example.com/stories/a3-thumb.jpg',
+        caption: 'Video story with auto duration & synced progress bar',
       },
     ],
   },
@@ -155,103 +173,70 @@ const styles = StyleSheet.create({
 });
 ```
 
-### Low-Level Native Cube Container (`InstagramStoryView`)
-
-If you want to control only the native 3D cube pager and pass an arbitrary `storyData` object directly to the native view:
-
-```tsx
-import * as React from 'react';
-import { Text, View } from 'react-native';
-import {
-  InstagramStoryView,
-  type InstagramStoryViewRef,
-} from 'react-native-instagram-story';
-
-export function CustomCubePager() {
-  const pagerRef = React.useRef<InstagramStoryViewRef>(null);
-
-  return (
-    <InstagramStoryView
-      ref={pagerRef}
-      style={{ flex: 1 }}
-      storyData={{
-        stories: [
-          {
-            id: '1',
-            avatarUri: 'https://example.com/avatar.jpg',
-            userUri: 'https://example.com/user.jpg',
-            items: [{ id: '1-1', imageUri: 'https://example.com/story.jpg' }],
-          },
-        ],
-      }}
-      initialPage={0}
-      perspective={4.5}
-      cubeAngle={90}
-      onPageSelected={(e) => {
-        console.log('Selected story index:', e.nativeEvent.position);
-      }}
-    >
-      <View style={{ flex: 1 }}>
-        <Text>Story Page 1</Text>
-      </View>
-      <View style={{ flex: 1 }}>
-        <Text>Story Page 2</Text>
-      </View>
-    </InstagramStoryView>
-  );
-}
-```
-
 ## API Reference
 
 ### `<InstagramStory />` Props
 
-| Prop | Type | Default | Description |
-| --- | --- | --- | --- |
-| `stories` | `readonly TStory[]` | **Required** | Array of story group objects (supports custom backend shapes). |
-| `visible` | `boolean` | `true` | Controls modal/viewer visibility. |
-| `initialStoryIndex` | `number` | `0` | Initial story group index when opened. |
-| `initialItemIndex` | `number` | `0` | Initial item index inside the initial story group. |
-| `getInitialItemIndex` | `(story, storyIndex) => number` | — | Resolve the starting item index per story (e.g. from `useStoryProgress`). |
-| `duration` | `number` | `10000` | Default auto-advance duration per story item in milliseconds. |
-| `autoPlay` | `boolean` | `true` | Automatically advance to the next item/story when duration elapses. |
-| `swipeToClose` | `boolean` | `true` | Enable vertical swipe-down gesture to close the viewer. |
-| `swipeToCloseThreshold` | `number` | `120` | Vertical drag distance in pixels required to dismiss. |
-| `tapToNavigate` | `boolean` | `true` | Tap left/right areas of the screen to move to previous/next item. |
-| `pauseOnHold` | `boolean` | `true` | Pause the timer while pressing and holding the story. |
-| `hideOverlaysOnHold` | `boolean` | `true` | Hide progress bar, header, and footer overlays while holding the story so only story content is visible. |
-| `showProgressBar` | `boolean` | `true` | Show segmented progress bars at the top of each story. |
-| `showUser` | `boolean` | `true` | Show user avatar and username on the story view (set `false` to hide user info). |
-| `progressBarColor` | `string` | `'#FFFFFF'` | Filled progress bar color. |
-| `progressTrackColor` | `string` | `'rgba(255,255,255,0.3)'` | Background track color for progress segments. |
-| `backdropColor` | `string` | `'#000000'` | Backdrop color visible behind the viewer during swipe-down. |
-| `perspective` | `number` | `4.5` | Camera distance multiplier relative to view width for 3D cube perspective. |
-| `cubeAngle` | `number` | `90` | Maximum Y-axis rotation angle in degrees at full page offset. |
-| `style` | `StyleProp<ViewStyle>` | — | Optional container style. |
-| `keyExtractor` | `(story, index) => string` | `story.id ?? index` | Extract a unique key for each story group. |
-| `getItems` | `(story) => readonly TItem[]` | `story.items ?? []` | Extract the items array from a custom story object. |
-| `getItemDuration` | `(item, story) => number` | `item.duration ?? duration` | Override duration in milliseconds for an individual story item. |
-| `getItemImage` | `(item, story) => string \| undefined` | `resolveImageUri(item.imageUri ?? item.image ?? item.uri ?? item.url)` | Resolve an image URI for default item rendering. |
-| `renderItem` | `(info) => ReactNode` | Default full-screen image | Custom renderer for each story item (`{ item, story, itemIndex, storyIndex, isActive, isPaused, progress }`). |
-| `renderHeader` | `(info) => ReactNode` | Default avatar + title + close | Custom header renderer below the progress bar (`{ story, item, storyIndex, itemIndex, isActive, showUser, close }`). |
-| `renderFooter` | `(info) => ReactNode` | — | Custom footer renderer (e.g. reply input, reactions). |
-| `onStoryChange` | `(storyIndex, story) => void` | — | Called when the active story group changes. |
-| `onItemChange` | `(itemIndex, item, storyIndex, story) => void` | — | Called when the active item inside a story group changes. |
-| `onStoryItemSeen` | `(info) => void` | — | Called when an item becomes visible (`{ story, item, storyIndex, itemIndex, isLastItem }`). |
-| `onClose` | `() => void` | — | Called when the user swipes down or taps close. |
-| `onFinish` | `() => void` | Falls back to `onClose` | Called when navigation/auto-play passes the final item of the last story. |
+| Prop                    | Type                                           | Default                                                                               | Description                                                                                                                                                                                                                           |
+| ----------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `stories`               | `readonly TStory[]`                            | **Required**                                                                          | Array of story group objects (supports custom backend shapes).                                                                                                                                                                        |
+| `visible`               | `boolean`                                      | `true`                                                                                | Controls modal/viewer visibility.                                                                                                                                                                                                     |
+| `initialStoryIndex`     | `number`                                       | `0`                                                                                   | Initial story group index when opened.                                                                                                                                                                                                |
+| `initialItemIndex`      | `number`                                       | `0`                                                                                   | Initial item index inside the initial story group.                                                                                                                                                                                    |
+| `getInitialItemIndex`   | `(story, storyIndex) => number`                | —                                                                                     | Resolve the starting item index per story (e.g. from `useStoryProgress`).                                                                                                                                                             |
+| `duration`              | `number`                                       | `10000`                                                                               | Default auto-advance duration per story item in milliseconds.                                                                                                                                                                         |
+| `autoPlay`              | `boolean`                                      | `true`                                                                                | Automatically advance to the next item/story when duration elapses.                                                                                                                                                                   |
+| `swipeToClose`          | `boolean`                                      | `true`                                                                                | Enable vertical swipe-down gesture to close the viewer.                                                                                                                                                                               |
+| `swipeToCloseThreshold` | `number`                                       | `120`                                                                                 | Vertical drag distance in pixels required to dismiss.                                                                                                                                                                                 |
+| `tapToNavigate`         | `boolean`                                      | `true`                                                                                | Tap left/right areas of the screen to move to previous/next item.                                                                                                                                                                     |
+| `pauseOnHold`           | `boolean`                                      | `true`                                                                                | Pause the timer while pressing and holding the story.                                                                                                                                                                                 |
+| `hideOverlaysOnHold`    | `boolean`                                      | `true`                                                                                | Hide progress bar, header, and footer overlays while holding the story so only story content is visible.                                                                                                                              |
+| `showProgressBar`       | `boolean`                                      | `true`                                                                                | Show segmented progress bars at the top of each story.                                                                                                                                                                                |
+| `showUser`              | `boolean`                                      | `true`                                                                                | Show user avatar and username on the story view (set `false` to hide user info).                                                                                                                                                      |
+| `showCloseButton`       | `boolean`                                      | `true`                                                                                | Show the close (`✕`) button in the story header (set `false` to hide it).                                                                                                                                                             |
+| `showLoadingIndicator`  | `boolean`                                      | `true`                                                                                | Show a centered loading spinner while a video story is buffering.                                                                                                                                                                     |
+| `muted`                 | `boolean`                                      | `false`                                                                               | Mute audio for video stories (can also be overridden per item via `item.muted`).                                                                                                                                                      |
+| `videoResizeMode`       | `'cover' \| 'contain' \| 'stretch'`            | `'cover'`                                                                             | Resize mode for built-in video playback.                                                                                                                                                                                              |
+| `repeatVideo`           | `boolean`                                      | `false`                                                                               | Loop video stories when playback finishes instead of advancing.                                                                                                                                                                       |
+| `progressBarColor`      | `string`                                       | `'#FFFFFF'`                                                                           | Filled progress bar color.                                                                                                                                                                                                            |
+| `progressTrackColor`    | `string`                                       | `'rgba(255,255,255,0.3)'`                                                             | Background track color for progress segments.                                                                                                                                                                                         |
+| `backdropColor`         | `string`                                       | `'#000000'`                                                                           | Backdrop color visible behind the viewer during swipe-down.                                                                                                                                                                           |
+| `perspective`           | `number`                                       | `4.5`                                                                                 | Camera distance multiplier relative to view width for 3D cube perspective.                                                                                                                                                            |
+| `cubeAngle`             | `number`                                       | `90`                                                                                  | Maximum Y-axis rotation angle in degrees at full page offset.                                                                                                                                                                         |
+| `style`                 | `StyleProp<ViewStyle>`                         | —                                                                                     | Optional container style.                                                                                                                                                                                                             |
+| `keyExtractor`          | `(story, index) => string`                     | `story.id ?? index`                                                                   | Extract a unique key for each story group.                                                                                                                                                                                            |
+| `getItems`              | `(story) => readonly TItem[]`                  | `story.items ?? []`                                                                   | Extract the items array from a custom story object.                                                                                                                                                                                   |
+| `getItemDuration`       | `(item, story) => number`                      | `item.duration ?? duration`                                                           | Override duration in milliseconds for an individual story item (for videos without an explicit duration, the video's natural duration is used).                                                                                       |
+| `getItemImage`          | `(item, story) => string \| undefined`         | `resolveImageUri(item.imageUri ?? item.image ?? item.uri ?? item.url)`                | Resolve an image URI for default item rendering.                                                                                                                                                                                      |
+| `getItemType`           | `(item, story) => 'image' \| 'video'`          | Auto-detected                                                                         | Determine whether an item is `'image'` or `'video'` (checks `type`/`mediaType`, `videoUri`/`video`, and video extensions on `uri`/`url`).                                                                                             |
+| `getItemVideo`          | `(item, story) => string \| undefined`         | `resolveMediaUri(item.videoUri ?? item.video)`                                        | Resolve a video URI (falls back to `uri`/`url` when type is `'video'`).                                                                                                                                                               |
+| `getItemPoster`         | `(item, story) => string \| undefined`         | `resolveMediaUri(item.posterUri ?? item.thumbnailUri ?? item.imageUri ?? item.image)` | Resolve a poster/thumbnail URI displayed while a video loads.                                                                                                                                                                         |
+| `renderItem`            | `(info) => ReactNode`                          | Default image / video                                                                 | Custom renderer for each story item (`{ item, story, itemIndex, storyIndex, isActive, isPaused, progress, mediaType, imageUri, videoUri, posterUri, muted, onVideoLoad, onVideoProgress, onVideoBuffer, onVideoEnd, onVideoError }`). |
+| `renderVideo`           | `(info) => ReactNode`                          | Built-in player inside `<InstagramStoryView />`                                       | Custom video renderer (e.g., `react-native-video` or `expo-video`) receiving video URI, `isPaused`, `muted`, and progress sync callbacks.                                                                                             |
+| `renderHeader`          | `(info) => ReactNode`                          | Default avatar + title + close                                                        | Custom header renderer below the progress bar (`{ story, item, storyIndex, itemIndex, isActive, showUser, showCloseButton, mediaType, close }`).                                                                                      |
+| `renderFooter`          | `(info) => ReactNode`                          | —                                                                                     | Custom footer renderer (e.g. reply input, reactions).                                                                                                                                                                                 |
+| `onStoryChange`         | `(storyIndex, story) => void`                  | —                                                                                     | Called when the active story group changes.                                                                                                                                                                                           |
+| `onItemChange`          | `(itemIndex, item, storyIndex, story) => void` | —                                                                                     | Called when the active item inside a story group changes.                                                                                                                                                                             |
+| `onStoryItemSeen`       | `(info) => void`                               | —                                                                                     | Called when an item becomes visible (`{ story, item, storyIndex, itemIndex, isLastItem }`).                                                                                                                                           |
+| `onVideoLoad`           | `(info) => void`                               | —                                                                                     | Called when a video story finishes loading its metadata (`{ duration, width, height, item, story, itemIndex, storyIndex }`).                                                                                                          |
+| `onVideoEnd`            | `(info) => void`                               | —                                                                                     | Called when a video story finishes playing.                                                                                                                                                                                           |
+| `onVideoError`          | `(info) => void`                               | —                                                                                     | Called when a video story fails to load or play.                                                                                                                                                                                      |
+| `onClose`               | `() => void`                                   | —                                                                                     | Called when the user swipes down or taps close.                                                                                                                                                                                       |
+| `onFinish`              | `() => void`                                   | Falls back to `onClose`                                                               | Called when navigation/auto-play passes the final item of the last story.                                                                                                                                                             |
 
 ### `useStoryProgress(options)`
 
 Manages per-item seen tracking, resume-at-unwatched-item logic, and moving watched avatars to the end when the story viewer closes.
 
 **Options:**
+
 - `stories: readonly TStory[]`
 - `keyExtractor?: (story, index) => string`
 - `getItems?: (story) => readonly TItem[]`
 - `getItemKey?: (item, index, story) => string`
 
 **Returns:**
+
 - `orderedStories`: Reordered array with unwatched stories first and fully watched stories moved to the end after `closeStory()`.
 - `isOpen`: Boolean state for `<InstagramStory visible={isOpen} />`.
 - `initialStoryIndex`: Index inside `orderedStories` for `<InstagramStory initialStoryIndex={initialStoryIndex} />`.
@@ -262,28 +247,9 @@ Manages per-item seen tracking, resume-at-unwatched-item logic, and moving watch
 - `markItemSeen(info)`: Pass to `<InstagramStory onStoryItemSeen={markItemSeen} />`.
 - `resetProgress()`: Clears all recorded progress.
 
-### `<InstagramStoryView />` Props & Ref
+### `resolveMediaUri(source)` / `resolveImageUri(source)`
 
-| Prop | Type | Default | Description |
-| --- | --- | --- | --- |
-| `storyData` | `Record<string, unknown> \| readonly Record<string, unknown>[]` | — | Flexible story payload forwarded to native Fabric; `avatarUri`, `userUri`, and `imageUri` asset IDs are automatically resolved to URI strings. |
-| `initialPage` | `number` | `0` | Initial page index on mount. |
-| `scrollEnabled` | `boolean` | `true` | Enable/disable horizontal user swiping. |
-| `offscreenPageLimit` | `number` | `1` | Number of pages kept mounted offscreen on either side. |
-| `perspective` | `number` | `4.5` | Camera distance multiplier for 3D cube perspective. |
-| `cubeAngle` | `number` | `90` | Maximum Y-axis cube rotation angle in degrees. |
-| `overScrollMode` | `'auto' \| 'always' \| 'never'` | `'never'` | Android overscroll glow mode. |
-| `onPageSelected` | `(event) => void` | — | Native callback with `{ position }`. |
-| `onPageScroll` | `(event) => void` | — | Native callback with `{ position, offset }`. |
-| `onPageScrollStateChanged` | `(event) => void` | — | Native callback with `{ pageScrollState }`. |
-
-**Ref methods (`InstagramStoryViewRef`):**
-- `setPage(selectedPage: number): void`
-- `setPageWithoutAnimation(selectedPage: number): void`
-
-### `resolveImageUri(source)`
-
-Helper that converts a URL string, `{ uri: string }` object, or numeric local `require(...)` asset ID into a resolved URI string (`string | undefined`).
+Helpers that convert a URL string, `{ uri: string }` object, or numeric local `require(...)` asset ID into a resolved URI string (`string | undefined`).
 
 ## Contributing
 

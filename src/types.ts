@@ -1,4 +1,4 @@
-import type * as React from 'react';
+import type { ReactNode } from 'react';
 import type {
   Animated,
   NativeSyntheticEvent,
@@ -24,11 +24,54 @@ export type PageScrollStateChangedEvent = Readonly<{
 
 export type OverScrollMode = 'auto' | 'always' | 'never';
 
-export type StoryImageSource = string | number | Readonly<{ uri: string }>;
+export type StoryMediaType = 'image' | 'video';
+
+export type StoryVideoResizeMode = 'cover' | 'contain' | 'stretch';
+
+export type StoryMediaSource = string | number | Readonly<{ uri: string }>;
+
+export type StoryImageSource = StoryMediaSource;
+
+export type StoryViewVideoLoadEvent = Readonly<{
+  position: number;
+  duration: number;
+  width: number;
+  height: number;
+}>;
+
+export type StoryViewVideoProgressEvent = Readonly<{
+  position: number;
+  currentTime: number;
+  duration: number;
+}>;
+
+export type StoryViewVideoBufferEvent = Readonly<{
+  position: number;
+  isBuffering: boolean;
+}>;
+
+export type StoryViewVideoEndEvent = Readonly<{
+  position: number;
+  finished: boolean;
+}>;
+
+export type StoryViewVideoErrorEvent = Readonly<{
+  position: number;
+  message: string;
+}>;
+
+export interface StoryPageMediaConfig {
+  enabled?: boolean;
+  mediaType?: StoryMediaType;
+  uri?: StoryMediaSource;
+  posterUri?: StoryImageSource;
+  muted?: boolean;
+}
 
 export interface InstagramStoryViewRef {
   setPage: (selectedPage: number) => void;
   setPageWithoutAnimation: (selectedPage: number) => void;
+  seekVideo: (position: number, positionMs: number) => void;
 }
 
 export interface InstagramStoryViewProps extends ViewProps {
@@ -37,6 +80,47 @@ export interface InstagramStoryViewProps extends ViewProps {
    * Supports custom backend JSON structures containing fundamental properties like `avatarUri`, `userUri`, and `imageUri`.
    */
   storyData?: Record<string, unknown> | readonly Record<string, unknown>[];
+  /**
+   * Per-page media configuration (image or video) for each page index.
+   * Useful when rendering pages inside the unified `InstagramStoryView` component.
+   */
+  pageMedia?: readonly StoryPageMediaConfig[];
+  /**
+   * Explicit media type ('image' | 'video') when rendering standalone media directly in `InstagramStoryView`.
+   */
+  mediaType?: StoryMediaType;
+  /**
+   * Unified standalone media source (image or video URI, `{ uri }`, or local `require(...)` asset).
+   */
+  source?: StoryMediaSource;
+  /**
+   * Explicit standalone image source when rendering an image directly in `InstagramStoryView`.
+   */
+  imageUri?: StoryImageSource;
+  /**
+   * Explicit standalone video source when rendering a video directly in `InstagramStoryView`.
+   */
+  videoUri?: StoryMediaSource;
+  /**
+   * Optional poster/thumbnail image displayed before video playback becomes ready.
+   */
+  posterUri?: StoryImageSource;
+  /**
+   * Pause active video playback (default: false).
+   */
+  paused?: boolean;
+  /**
+   * Mute video audio (default: false).
+   */
+  muted?: boolean;
+  /**
+   * Loop video playback when finished (default: false).
+   */
+  repeat?: boolean;
+  /**
+   * Resize mode for built-in video and standalone image rendering (default: 'cover').
+   */
+  videoResizeMode?: StoryVideoResizeMode;
   /**
    * Initial story page index when mounted (default: 0).
    */
@@ -75,6 +159,32 @@ export interface InstagramStoryViewProps extends ViewProps {
   onPageScrollStateChanged?: (
     event: NativeSyntheticEvent<PageScrollStateChangedEvent>
   ) => void;
+  /**
+   * Called when a video inside a page finishes loading its metadata.
+   */
+  onVideoLoad?: (event: NativeSyntheticEvent<StoryViewVideoLoadEvent>) => void;
+  /**
+   * Called periodically while a video plays inside a page.
+   */
+  onVideoProgress?: (
+    event: NativeSyntheticEvent<StoryViewVideoProgressEvent>
+  ) => void;
+  /**
+   * Called when video buffering state changes for a page.
+   */
+  onVideoBuffer?: (
+    event: NativeSyntheticEvent<StoryViewVideoBufferEvent>
+  ) => void;
+  /**
+   * Called when a video finishes playing inside a page.
+   */
+  onVideoEnd?: (event: NativeSyntheticEvent<StoryViewVideoEndEvent>) => void;
+  /**
+   * Called when video loading or playback fails for a page.
+   */
+  onVideoError?: (
+    event: NativeSyntheticEvent<StoryViewVideoErrorEvent>
+  ) => void;
 }
 
 /**
@@ -82,11 +192,18 @@ export interface InstagramStoryViewProps extends ViewProps {
  */
 export interface StoryItemData {
   id?: string | number;
+  type?: StoryMediaType | string;
+  mediaType?: StoryMediaType | string;
   imageUri?: StoryImageSource;
   image?: StoryImageSource;
+  videoUri?: StoryMediaSource;
+  video?: StoryMediaSource;
+  posterUri?: StoryImageSource;
+  thumbnailUri?: StoryImageSource;
   uri?: string;
   url?: string;
   duration?: number;
+  muted?: boolean;
   [key: string]: unknown;
 }
 
@@ -101,6 +218,26 @@ export interface StoryGroupData<TItem = StoryItemData> {
   [key: string]: unknown;
 }
 
+export interface StoryVideoLoadEvent {
+  /**
+   * Video duration in milliseconds.
+   */
+  duration: number;
+  width?: number;
+  height?: number;
+}
+
+export interface StoryVideoProgressEvent {
+  /**
+   * Current playback position in milliseconds.
+   */
+  currentTime: number;
+  /**
+   * Total video duration in milliseconds.
+   */
+  duration: number;
+}
+
 export interface StoryRenderItemInfo<TStory, TItem> {
   item: TItem;
   story: TStory;
@@ -109,6 +246,23 @@ export interface StoryRenderItemInfo<TStory, TItem> {
   isActive: boolean;
   isPaused: boolean;
   progress: Animated.Value;
+  mediaType: StoryMediaType;
+  imageUri?: string;
+  videoUri?: string;
+  posterUri?: string;
+  muted: boolean;
+  onVideoLoad: (event: StoryVideoLoadEvent) => void;
+  onVideoProgress: (event: StoryVideoProgressEvent) => void;
+  onVideoBuffer: (isBuffering: boolean) => void;
+  onVideoEnd: () => void;
+  onVideoError: (error?: unknown) => void;
+}
+
+export interface StoryRenderVideoInfo<
+  TStory,
+  TItem,
+> extends StoryRenderItemInfo<TStory, TItem> {
+  videoUri: string;
 }
 
 export interface StoryRenderHeaderInfo<TStory, TItem> {
@@ -118,6 +272,8 @@ export interface StoryRenderHeaderInfo<TStory, TItem> {
   itemIndex: number;
   isActive: boolean;
   showUser: boolean;
+  showCloseButton: boolean;
+  mediaType: StoryMediaType;
   close: () => void;
 }
 
@@ -190,6 +346,26 @@ export interface InstagramStoryProps<
    */
   showUser?: boolean;
   /**
+   * Show the close button in the story header (default: true).
+   */
+  showCloseButton?: boolean;
+  /**
+   * Show a loading spinner while a video story is buffering (default: true).
+   */
+  showLoadingIndicator?: boolean;
+  /**
+   * Mute audio for video stories (default: false). Can also be overridden per item via `item.muted`.
+   */
+  muted?: boolean;
+  /**
+   * Resize mode for built-in video stories (default: 'cover').
+   */
+  videoResizeMode?: StoryVideoResizeMode;
+  /**
+   * Loop video stories when playback ends instead of advancing (default: false).
+   */
+  repeatVideo?: boolean;
+  /**
    * Filled progress bar color (default: '#FFFFFF').
    */
   progressBarColor?: string;
@@ -230,19 +406,34 @@ export interface InstagramStoryProps<
    */
   getItemImage?: (item: TItem, story: TStory) => string | undefined;
   /**
-   * Custom renderer for each story item's content.
+   * Determine media type ('image' | 'video') for an item.
+   * Defaults to checking `item.type` / `item.mediaType`, `videoUri` / `video`, or video file extensions on `uri` / `url`.
    */
-  renderItem?: (info: StoryRenderItemInfo<TStory, TItem>) => React.ReactNode;
+  getItemType?: (item: TItem, story: TStory) => StoryMediaType;
+  /**
+   * Extract video URI for video story rendering (defaults to `item.videoUri ?? item.video`, or `item.uri ?? item.url` when type is `'video'`).
+   */
+  getItemVideo?: (item: TItem, story: TStory) => string | undefined;
+  /**
+   * Extract poster/thumbnail image URI shown while a video story loads (defaults to `item.posterUri ?? item.thumbnailUri ?? item.imageUri ?? item.image`).
+   */
+  getItemPoster?: (item: TItem, story: TStory) => string | undefined;
+  /**
+   * Custom renderer for each story item's content (overrides both image and video default rendering).
+   */
+  renderItem?: (info: StoryRenderItemInfo<TStory, TItem>) => ReactNode;
+  /**
+   * Custom renderer specifically for video story items (overrides only the built-in video player).
+   */
+  renderVideo?: (info: StoryRenderVideoInfo<TStory, TItem>) => ReactNode;
   /**
    * Custom header renderer (placed below the progress bar).
    */
-  renderHeader?: (
-    info: StoryRenderHeaderInfo<TStory, TItem>
-  ) => React.ReactNode;
+  renderHeader?: (info: StoryRenderHeaderInfo<TStory, TItem>) => ReactNode;
   /**
    * Custom footer renderer (e.g., reply input, reactions).
    */
-  renderFooter?: (info: StoryRenderItemInfo<TStory, TItem>) => React.ReactNode;
+  renderFooter?: (info: StoryRenderItemInfo<TStory, TItem>) => ReactNode;
   /**
    * Called when the active story group changes.
    */
@@ -260,6 +451,36 @@ export interface InstagramStoryProps<
    * Called when a story item becomes visible/seen while the viewer is open.
    */
   onStoryItemSeen?: (info: StoryItemSeenInfo<TStory, TItem>) => void;
+  /**
+   * Called when a video story finishes loading its metadata.
+   */
+  onVideoLoad?: (
+    info: StoryVideoLoadEvent & {
+      item: TItem;
+      story: TStory;
+      itemIndex: number;
+      storyIndex: number;
+    }
+  ) => void;
+  /**
+   * Called when a video story finishes playing.
+   */
+  onVideoEnd?: (info: {
+    item: TItem;
+    story: TStory;
+    itemIndex: number;
+    storyIndex: number;
+  }) => void;
+  /**
+   * Called when a video story fails to load or play.
+   */
+  onVideoError?: (info: {
+    error: unknown;
+    item: TItem;
+    story: TStory;
+    itemIndex: number;
+    storyIndex: number;
+  }) => void;
   /**
    * Called when the user swipes down to close or taps close.
    */

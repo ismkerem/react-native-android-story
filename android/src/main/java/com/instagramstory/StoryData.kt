@@ -7,7 +7,10 @@ import com.facebook.react.bridge.ReadableType
 
 data class StoryItemPayload(
   val id: String?,
+  val type: String?,
   val imageUri: String?,
+  val videoUri: String?,
+  val posterUri: String?,
   val raw: ReadableMap
 )
 
@@ -17,7 +20,10 @@ data class StoryGroupPayload(
   val userUri: String?,
   val imageUri: String?,
   val items: List<StoryItemPayload>,
-  val raw: ReadableMap
+  val raw: ReadableMap,
+  val type: String? = null,
+  val videoUri: String? = null,
+  val posterUri: String? = null
 )
 
 data class StoryDataPayload(
@@ -70,7 +76,10 @@ object StoryDataParser {
               items.add(
                 StoryItemPayload(
                   id = readStringOrNumber(itemMap, "id"),
+                  type = readStringOrNumber(itemMap, "type") ?: readStringOrNumber(itemMap, "mediaType"),
                   imageUri = readUri(itemMap, "imageUri", "image", "uri", "url"),
+                  videoUri = readUri(itemMap, "videoUri", "video"),
+                  posterUri = readUri(itemMap, "posterUri", "thumbnailUri"),
                   raw = itemMap
                 )
               )
@@ -86,7 +95,10 @@ object StoryDataParser {
       userUri = readUri(map, "userUri"),
       imageUri = readUri(map, "imageUri", "image", "uri", "url"),
       items = items,
-      raw = map
+      raw = map,
+      type = readStringOrNumber(map, "type") ?: readStringOrNumber(map, "mediaType"),
+      videoUri = readUri(map, "videoUri", "video"),
+      posterUri = readUri(map, "posterUri", "thumbnailUri")
     )
   }
 

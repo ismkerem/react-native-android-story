@@ -1,4 +1,4 @@
-import * as React from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import type { StoryGroupData, StoryItemData, StoryItemSeenInfo } from './types';
 
 export interface UseStoryProgressOptions<
@@ -77,18 +77,18 @@ export function useStoryProgress<
   TStory,
   TItem
 > {
-  const [isOpen, setIsOpen] = React.useState(false);
-  const [initialStoryIndex, setInitialStoryIndex] = React.useState(0);
-  const [seenItemsByStory, setSeenItemsByStory] = React.useState<
+  const [isOpen, setIsOpen] = useState(false);
+  const [initialStoryIndex, setInitialStoryIndex] = useState(0);
+  const [seenItemsByStory, setSeenItemsByStory] = useState<
     Record<string, Record<string, true>>
   >({});
-  const [completedOrder, setCompletedOrder] = React.useState<string[]>([]);
+  const [completedOrder, setCompletedOrder] = useState<string[]>([]);
 
-  const frozenStoriesRef = React.useRef<readonly TStory[] | null>(null);
-  const seenItemsRef = React.useRef(seenItemsByStory);
+  const frozenStoriesRef = useRef<readonly TStory[] | null>(null);
+  const seenItemsRef = useRef(seenItemsByStory);
   seenItemsRef.current = seenItemsByStory;
 
-  const resolveItems = React.useCallback(
+  const resolveItems = useCallback(
     (story: TStory): readonly TItem[] => {
       if (getItems) return getItems(story);
       const raw = (story as StoryGroupData<TItem>).items;
@@ -97,7 +97,7 @@ export function useStoryProgress<
     [getItems]
   );
 
-  const resolveItemKey = React.useCallback(
+  const resolveItemKey = useCallback(
     (item: TItem, index: number, story: TStory): string => {
       if (getItemKey) return getItemKey(item, index, story);
       const rawId = (item as StoryItemData).id;
@@ -106,7 +106,7 @@ export function useStoryProgress<
     [getItemKey]
   );
 
-  const storyKeyMap = React.useMemo(() => {
+  const storyKeyMap = useMemo(() => {
     const map = new Map<TStory, string>();
     stories.forEach((story, index) => {
       const key = keyExtractor
@@ -119,7 +119,7 @@ export function useStoryProgress<
     return map;
   }, [keyExtractor, stories]);
 
-  const getStoryKey = React.useCallback(
+  const getStoryKey = useCallback(
     (story: TStory, fallbackIndex = 0): string => {
       const mapped = storyKeyMap.get(story);
       if (mapped != null) return mapped;
@@ -130,12 +130,9 @@ export function useStoryProgress<
     [keyExtractor, storyKeyMap]
   );
 
-  const completedSet = React.useMemo(
-    () => new Set(completedOrder),
-    [completedOrder]
-  );
+  const completedSet = useMemo(() => new Set(completedOrder), [completedOrder]);
 
-  const computedOrderedStories = React.useMemo(() => {
+  const computedOrderedStories = useMemo(() => {
     const unwatched: TStory[] = [];
     const byKey = new Map<string, TStory>();
 
@@ -163,7 +160,7 @@ export function useStoryProgress<
       ? frozenStoriesRef.current
       : computedOrderedStories;
 
-  const isStoryWatched = React.useCallback(
+  const isStoryWatched = useCallback(
     (story: TStory): boolean => {
       const key = getStoryKey(story);
       return completedSet.has(key);
@@ -171,7 +168,7 @@ export function useStoryProgress<
     [completedSet, getStoryKey]
   );
 
-  const getInitialItemIndex = React.useCallback(
+  const getInitialItemIndex = useCallback(
     (story: TStory): number => {
       const key = getStoryKey(story);
       const items = resolveItems(story);
@@ -192,7 +189,7 @@ export function useStoryProgress<
     [getStoryKey, resolveItemKey, resolveItems, seenItemsByStory]
   );
 
-  const markItemSeen = React.useCallback(
+  const markItemSeen = useCallback(
     ({
       story,
       item,
@@ -220,7 +217,7 @@ export function useStoryProgress<
     [getStoryKey, resolveItemKey]
   );
 
-  const openStory = React.useCallback(
+  const openStory = useCallback(
     (storyOrIndex: TStory | number) => {
       const list = computedOrderedStories;
       const targetIndex =
@@ -239,7 +236,7 @@ export function useStoryProgress<
     [computedOrderedStories]
   );
 
-  const closeStory = React.useCallback(() => {
+  const closeStory = useCallback(() => {
     const currentSeen = seenItemsRef.current;
     const newlyCompleted: string[] = [];
 
@@ -269,7 +266,7 @@ export function useStoryProgress<
     }
   }, [getStoryKey, resolveItemKey, resolveItems, stories]);
 
-  const resetProgress = React.useCallback(() => {
+  const resetProgress = useCallback(() => {
     frozenStoriesRef.current = null;
     seenItemsRef.current = {};
     setSeenItemsByStory({});

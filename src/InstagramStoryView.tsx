@@ -1,6 +1,23 @@
-import * as React from 'react';
+import {
+  Children,
+  forwardRef,
+  isValidElement,
+  useCallback,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  type ComponentRef,
+} from 'react';
 import { StyleSheet, View } from 'react-native';
-import type { InstagramStoryViewProps, InstagramStoryViewRef } from './types';
+import NativeInstagramStoryView, {
+  Commands,
+} from './InstagramStoryViewNativeComponent';
+import { normalizeNativeStoryData, resolveMediaUri } from './resolveImageUri';
+import type {
+  InstagramStoryViewProps,
+  InstagramStoryViewRef,
+  PageScrollState,
+} from './types';
 
 export type {
   InstagramStoryViewProps,
@@ -10,40 +27,168 @@ export type {
   PageScrollState,
   PageScrollStateChangedEvent,
   PageSelectedEvent,
+  StoryMediaSource,
+  StoryMediaType,
+  StoryPageMediaConfig,
+  StoryVideoResizeMode,
+  StoryViewVideoBufferEvent,
+  StoryViewVideoEndEvent,
+  StoryViewVideoErrorEvent,
+  StoryViewVideoLoadEvent,
+  StoryViewVideoProgressEvent,
 } from './types';
 
-export const InstagramStoryView = React.forwardRef<
+export const InstagramStoryView = forwardRef<
   InstagramStoryViewRef,
   InstagramStoryViewProps
 >(
   (
-    { children, storyData: _storyData, initialPage = 0, style, ...rest },
+    {
+      children,
+      storyData,
+      pageMedia,
+      mediaType,
+      source,
+      imageUri,
+      videoUri,
+      posterUri,
+      paused = false,
+      muted = false,
+      repeat = false,
+      videoResizeMode = 'cover',
+      initialPage = 0,
+      scrollEnabled = true,
+      offscreenPageLimit = 1,
+      perspective = 4.5,
+      cubeAngle = 90,
+      overScrollMode = 'never',
+      onPageScrollStateChanged,
+      ...rest
+    },
     ref
   ) => {
-    const childArray = React.Children.toArray(children);
-    const [currentPage, setCurrentPage] = React.useState(initialPage);
+    const nativeRef =
+      useRef<ComponentRef<typeof NativeInstagramStoryView>>(null);
 
-    React.useImperativeHandle(
+    useImperativeHandle(
       ref,
       () => ({
         setPage(selectedPage: number) {
-          if (selectedPage >= 0 && selectedPage < childArray.length) {
-            setCurrentPage(selectedPage);
+          if (nativeRef.current != null) {
+            Commands.setPage(nativeRef.current, selectedPage);
           }
         },
         setPageWithoutAnimation(selectedPage: number) {
-          if (selectedPage >= 0 && selectedPage < childArray.length) {
-            setCurrentPage(selectedPage);
+          if (nativeRef.current != null) {
+            Commands.setPageWithoutAnimation(nativeRef.current, selectedPage);
+          }
+        },
+        seekVideo(position: number, positionMs: number) {
+          if (nativeRef.current != null) {
+            Commands.seekVideo(nativeRef.current, position, positionMs);
           }
         },
       }),
-      [childArray.length]
+      []
+    );
+
+    const wrappedChildren = useMemo(
+      () =>
+        Children.toArray(children).map((child, index) => {
+          const key =
+            isValidElement(child) && child.key != null
+              ? String(child.key)
+              : String(index);
+          return (
+            <View key={key} style={styles.page} collapsable={false}>
+              {child}
+            </View>
+          );
+        }),
+      [children]
+    );
+
+    const handlePageScrollStateChanged = useCallback(
+      (event: { nativeEvent: { pageScrollState: string } }) => {
+        if (!onPageScrollStateChanged) return;
+        onPageScrollStateChanged({
+          ...event,
+          nativeEvent: {
+            pageScrollState: event.nativeEvent
+              .pageScrollState as PageScrollState,
+          },
+        } as Parameters<NonNullable<typeof onPageScrollStateChanged>>[0]);
+      },
+      [onPageScrollStateChanged]
+    );
+
+    const normalizedStoryData = useMemo(
+      () =>
+        storyData !== undefined
+          ? normalizeNativeStoryData(storyData)
+          : undefined,
+      [storyData]
+    );
+
+    const normalizedPageMedia = useMemo(
+      () =>
+        pageMedia?.map((entry) => ({
+          ...(entry.enabled !== undefined ? { enabled: entry.enabled } : {}),
+          ...(entry.mediaType !== undefined
+            ? { mediaType: entry.mediaType }
+            : {}),
+          ...(entry.uri !== undefined
+            ? { uri: resolveMediaUri(entry.uri) }
+            : {}),
+          ...(entry.posterUri !== undefined
+            ? { posterUri: resolveMediaUri(entry.posterUri) }
+            : {}),
+          ...(entry.muted !== undefined ? { muted: entry.muted } : {}),
+        })),
+      [pageMedia]
+    );
+
+    const resolvedSource = useMemo(() => resolveMediaUri(source), [source]);
+    const resolvedImageUri = useMemo(
+      () => resolveMediaUri(imageUri),
+      [imageUri]
+    );
+    const resolvedVideoUri = useMemo(
+      () => resolveMediaUri(videoUri),
+      [videoUri]
+    );
+    const resolvedPosterUri = useMemo(
+      () => resolveMediaUri(posterUri),
+      [posterUri]
     );
 
     return (
-      <View {...rest} style={[styles.container, style]}>
-        {childArray[currentPage] ?? null}
-      </View>
+      <NativeInstagramStoryView
+        ref={nativeRef}
+        storyData={normalizedStoryData}
+        pageMedia={normalizedPageMedia}
+        mediaType={mediaType}
+        source={resolvedSource}
+        imageUri={resolvedImageUri}
+        videoUri={resolvedVideoUri}
+        posterUri={resolvedPosterUri}
+        paused={paused}
+        muted={muted}
+        repeat={repeat}
+        videoResizeMode={videoResizeMode}
+        initialPage={initialPage}
+        scrollEnabled={scrollEnabled}
+        offscreenPageLimit={offscreenPageLimit}
+        perspective={perspective}
+        cubeAngle={cubeAngle}
+        overScrollMode={overScrollMode}
+        onPageScrollStateChanged={
+          onPageScrollStateChanged ? handlePageScrollStateChanged : undefined
+        }
+        {...rest}
+      >
+        {wrappedChildren}
+      </NativeInstagramStoryView>
     );
   }
 );
@@ -51,7 +196,11 @@ export const InstagramStoryView = React.forwardRef<
 InstagramStoryView.displayName = 'InstagramStoryView';
 
 const styles = StyleSheet.create({
-  container: {
-    overflow: 'hidden',
+  page: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
   },
 });
