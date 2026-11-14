@@ -16,11 +16,8 @@
     "src",
     "lib",
     "android",
-    "ios",
     "cpp",
-    "*.podspec",
     "react-native.config.js",
-    "!ios/build",
     "!android/build",
     "!android/gradle",
     "!android/gradlew",
@@ -33,18 +30,15 @@
   ],
   "scripts": {
     "example": "yarn workspace react-native-instagram-story-example",
-    "clean": "del-cli android/build example/android/build example/android/app/build example/ios/build lib",
+    "clean": "del-cli android/build example/android/build example/android/app/build lib",
     "prepare": "bob build",
     "typecheck": "tsc",
     "lint": "eslint \"**/*.{js,ts,tsx}\"",
     "test": "jest",
-    "release": "release-it --only-version",
-    "web": "vite",
-    "build:web": "vite build"
+    "release": "release-it --only-version"
   },
   "keywords": [
     "react-native",
-    "ios",
     "android"
   ],
   "repository": {
@@ -120,13 +114,6 @@
     "jsSrcsDir": "src",
     "android": {
       "javaPackageName": "com.instagramstory"
-    },
-    "ios": {
-      "components": {
-        "InstagramStoryView": {
-          "className": "InstagramStoryView"
-        }
-      }
     }
   },
   "prettier": {

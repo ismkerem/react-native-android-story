@@ -1,6 +1,9 @@
 export { InstagramStory } from './InstagramStory';
-export { InstagramStoryView } from './InstagramStoryView';
-export { resolveImageUri } from './resolveImageUri';
+export {
+  inferMediaTypeFromUri,
+  resolveImageUri,
+  resolveMediaUri,
+} from './resolveImageUri';
 export {
   useStoryProgress,
   type UseStoryProgressOptions,
@@ -8,16 +11,16 @@ export {
 } from './useStoryProgress';
 export type {
   InstagramStoryProps,
-  InstagramStoryViewProps,
-  InstagramStoryViewRef,
-  OverScrollMode,
-  PageScrollEvent,
-  PageScrollState,
-  PageScrollStateChangedEvent,
-  PageSelectedEvent,
   StoryGroupData,
+  StoryImageSource,
   StoryItemData,
   StoryItemSeenInfo,
+  StoryMediaSource,
+  StoryMediaType,
   StoryRenderHeaderInfo,
   StoryRenderItemInfo,
+  StoryRenderVideoInfo,
+  StoryVideoLoadEvent,
+  StoryVideoProgressEvent,
+  StoryVideoResizeMode,
 } from './types';

@@ -1,9 +1,10 @@
 import { Image } from 'react-native';
+import type { StoryMediaType } from './types';
 
 /**
  * Resolves a URL string, `{ uri }` object, or local `require(...)` numeric asset into a URI string.
  */
-export function resolveImageUri(source: unknown): string | undefined {
+export function resolveMediaUri(source: unknown): string | undefined {
   if (typeof source === 'string') {
     const trimmed = source.trim();
     return trimmed.length > 0 ? trimmed : undefined;
@@ -14,17 +15,47 @@ export function resolveImageUri(source: unknown): string | undefined {
   }
   if (source && typeof source === 'object' && 'uri' in source) {
     const uri = (source as { uri?: unknown }).uri;
-    return typeof uri === 'string' && uri.trim().length > 0 ? uri : undefined;
+    return typeof uri === 'string' && uri.trim().length > 0
+      ? uri.trim()
+      : undefined;
   }
   return undefined;
 }
 
-const IMAGE_URI_KEYS = ['avatarUri', 'userUri', 'imageUri'] as const;
+/**
+ * Resolves an image URL string, `{ uri }` object, or local `require(...)` numeric asset into a URI string.
+ */
+export const resolveImageUri = resolveMediaUri;
+
+const VIDEO_EXTENSION_REGEX =
+  /\.(mp4|mov|m4v|webm|m3u8|mkv|3gp|avi|ts)(?:$|[?#])/i;
+
+/**
+ * Infers `'video'` when a URI path ends with a recognized video file extension.
+ */
+export function inferMediaTypeFromUri(
+  uri: unknown
+): StoryMediaType | undefined {
+  const resolved = resolveMediaUri(uri);
+  if (!resolved) return undefined;
+  return VIDEO_EXTENSION_REGEX.test(resolved) ? 'video' : undefined;
+}
+
+const MEDIA_URI_KEYS = [
+  'avatarUri',
+  'userUri',
+  'imageUri',
+  'videoUri',
+  'video',
+  'posterUri',
+  'thumbnailUri',
+] as const;
 
 /**
  * Normalizes an arbitrary backend story data object/array for the native Fabric prop,
- * converting local `require(...)` asset IDs on `avatarUri`, `userUri`, and `imageUri`
- * into resolved URI strings while preserving all other custom backend fields.
+ * converting local `require(...)` asset IDs on media URI keys (`avatarUri`, `userUri`,
+ * `imageUri`, `videoUri`, `video`, `posterUri`, `thumbnailUri`) into resolved URI strings
+ * while preserving all other custom backend fields.
  */
 export function normalizeNativeStoryData(value: unknown): unknown {
   if (Array.isArray(value)) {
@@ -35,10 +66,10 @@ export function normalizeNativeStoryData(value: unknown): unknown {
     const normalized: Record<string, unknown> = {};
     for (const [key, fieldValue] of Object.entries(record)) {
       if (
-        (IMAGE_URI_KEYS as readonly string[]).includes(key) &&
+        (MEDIA_URI_KEYS as readonly string[]).includes(key) &&
         fieldValue != null
       ) {
-        normalized[key] = resolveImageUri(fieldValue) ?? fieldValue;
+        normalized[key] = resolveMediaUri(fieldValue) ?? fieldValue;
       } else if (
         Array.isArray(fieldValue) ||
         (fieldValue && typeof fieldValue === 'object')
