@@ -1,8 +1,8 @@
-# react-native-instagram-story
+# react-native-android-story
 
 > **Android Only:** This library supports **Android (New Architecture / Fabric) only**. iOS is not supported.
 
-React Native Instagram Story library powered by a native Android Fabric `ViewPager2` container with hardware-accelerated 3D cube transitions.
+React Native Android Story library powered by a native Android Fabric `ViewPager2` container with hardware-accelerated 3D cube transitions.
 
 ## Features
 
@@ -89,18 +89,18 @@ This package is not published on npm. You can install it directly from GitHub or
 ### Option 1: Install from GitHub
 
 ```sh
-yarn add https://github.com/ismkerem/react-native-instagram-story.git
+yarn add https://github.com/ismkerem/react-native-android-story.git
 # or
-npm install https://github.com/ismkerem/react-native-instagram-story.git
+npm install https://github.com/ismkerem/react-native-android-story.git
 ```
 
 ### Option 2: Embed locally in your app
 
-1. Clone or copy this repository into your project (for example, `packages/react-native-instagram-story`).
+1. Clone or copy this repository into your project (for example, `packages/react-native-android-story`).
 2. Add it as a local dependency in your app's `package.json`:
 
 ```json
-"react-native-instagram-story": "file:./packages/react-native-instagram-story"
+"react-native-android-story": "file:./packages/react-native-android-story"
 ```
 
 3. Install dependencies and rebuild your Android app so React Native autolinking & Codegen compile the native `InstagramStoryView` Fabric component.
@@ -130,7 +130,7 @@ import {
   InstagramStory,
   resolveImageUri,
   useStoryProgress,
-} from 'react-native-instagram-story';
+} from 'react-native-android-story';
 
 interface CustomStoryItem {
   id: string;
