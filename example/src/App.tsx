@@ -16,7 +16,7 @@ import {
   type StoryGroupData,
   type StoryItemData,
   type StoryVideoResizeMode,
-} from 'react-native-instagram-story';
+} from 'react-native-android-story';
 
 interface DemoStoryItem extends StoryItemData {
   id: string;

@@ -2,12 +2,12 @@
   "compilerOptions": {
     "rootDir": ".",
     "paths": {
-      "react-native-instagram-story": ["./src/index"]
+      "react-native-android-story": ["./src/index"]
     },
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,
     "customConditions": [
-      "react-native-instagram-story-source",
+      "react-native-android-story-source",
       "react-native-strict-api"
     ],
     "esModuleInterop": true,

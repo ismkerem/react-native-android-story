@@ -1,13 +1,13 @@
 {
-  "name": "react-native-instagram-story",
+  "name": "react-native-android-story",
   "version": "0.1.0",
   "private": true,
-  "description": "React Native Instagram Story library with native Fabric 3D cube transition",
+  "description": "React Native Android Story library with native Fabric 3D cube transition",
   "main": "./lib/module/index.js",
   "types": "./lib/typescript/src/index.d.ts",
   "exports": {
     ".": {
-      "react-native-instagram-story-source": "./src/index.tsx",
+      "react-native-android-story-source": "./src/index.tsx",
       "types": "./lib/typescript/src/index.d.ts",
       "default": "./lib/module/index.js"
     },
@@ -30,7 +30,7 @@
     "!**/.*"
   ],
   "scripts": {
-    "example": "yarn workspace react-native-instagram-story-example",
+    "example": "yarn workspace react-native-android-story-example",
     "clean": "del-cli android/build example/android/build example/android/app/build lib",
     "prepare": "bob build",
     "typecheck": "tsc",
@@ -43,14 +43,14 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ismkerem/react-native-instagram-story.git"
+    "url": "git+https://github.com/ismkerem/react-native-android-story.git"
   },
   "author": "İsmail Kerem Gül <ismkerem61@gmail.com> (https://github.com/ismkerem)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/ismkerem/react-native-instagram-story/issues"
+    "url": "https://github.com/ismkerem/react-native-android-story/issues"
   },
-  "homepage": "https://github.com/ismkerem/react-native-instagram-story#readme",
+  "homepage": "https://github.com/ismkerem/react-native-android-story#readme",
   "devDependencies": {
     "@commitlint/config-conventional": "^21.2.0",
     "@eslint/compat": "^2.1.0",
