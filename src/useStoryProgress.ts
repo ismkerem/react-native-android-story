@@ -79,14 +79,10 @@ export function useStoryProgress<
 > {
   const [isOpen, setIsOpen] = useState(false);
   const [initialStoryIndex, setInitialStoryIndex] = useState(0);
-  const [seenItemsByStory, setSeenItemsByStory] = useState<
-    Record<string, Record<string, true>>
-  >({});
   const [completedOrder, setCompletedOrder] = useState<string[]>([]);
 
   const frozenStoriesRef = useRef<readonly TStory[] | null>(null);
-  const seenItemsRef = useRef(seenItemsByStory);
-  seenItemsRef.current = seenItemsByStory;
+  const seenItemsRef = useRef<Record<string, Record<string, true>>>({});
 
   const resolveItems = useCallback(
     (story: TStory): readonly TItem[] => {
@@ -172,7 +168,7 @@ export function useStoryProgress<
     (story: TStory): number => {
       const key = getStoryKey(story);
       const items = resolveItems(story);
-      const seenMap = seenItemsByStory[key];
+      const seenMap = seenItemsRef.current[key];
       if (!seenMap || items.length === 0) return 0;
 
       for (let i = 0; i < items.length; i++) {
@@ -186,7 +182,7 @@ export function useStoryProgress<
       // All items watched: rewatch from the first item
       return 0;
     },
-    [getStoryKey, resolveItemKey, resolveItems, seenItemsByStory]
+    [getStoryKey, resolveItemKey, resolveItems]
   );
 
   const markItemSeen = useCallback(
@@ -199,20 +195,17 @@ export function useStoryProgress<
       const storyKey = getStoryKey(story, storyIndex);
       const itemKey = resolveItemKey(item, itemIndex, story);
 
-      setSeenItemsByStory((prev) => {
-        if (prev[storyKey]?.[itemKey]) {
-          return prev;
-        }
-        const next = {
-          ...prev,
-          [storyKey]: {
-            ...prev[storyKey],
-            [itemKey]: true as const,
-          },
-        };
-        seenItemsRef.current = next;
-        return next;
-      });
+      const prev = seenItemsRef.current;
+      if (prev[storyKey]?.[itemKey]) {
+        return;
+      }
+      seenItemsRef.current = {
+        ...prev,
+        [storyKey]: {
+          ...prev[storyKey],
+          [itemKey]: true as const,
+        },
+      };
     },
     [getStoryKey, resolveItemKey]
   );
@@ -269,7 +262,6 @@ export function useStoryProgress<
   const resetProgress = useCallback(() => {
     frozenStoriesRef.current = null;
     seenItemsRef.current = {};
-    setSeenItemsByStory({});
     setCompletedOrder([]);
   }, []);
 

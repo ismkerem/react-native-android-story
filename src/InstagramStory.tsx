@@ -380,6 +380,20 @@ export function InstagramStory<
     visible,
   ]);
 
+  const prevInitialStoryIndexRef = useRef(clampedInitialStory);
+  useEffect(() => {
+    if (visible && prevInitialStoryIndexRef.current !== clampedInitialStory) {
+      prevInitialStoryIndexRef.current = clampedInitialStory;
+      if (clampedInitialStory !== activeStoryIndexRef.current) {
+        activeStoryIndexRef.current = clampedInitialStory;
+        setActiveStoryIndex(clampedInitialStory);
+        storyViewRef.current?.setPage(clampedInitialStory);
+      }
+    } else {
+      prevInitialStoryIndexRef.current = clampedInitialStory;
+    }
+  }, [clampedInitialStory, visible]);
+
   useEffect(() => {
     const id = progressAnim.addListener(({ value }) => {
       currentProgressRef.current = value;
@@ -402,7 +416,7 @@ export function InstagramStory<
   const activeItem = activeItems[activeItemIndex];
 
   const isPaused =
-    (pauseOnHold && isHolding) || isSwipingDown || scrollState !== 'idle';
+    (pauseOnHold && isHolding) || isSwipingDown || scrollState === 'dragging';
   const hideOverlays = hideOverlaysOnHold && isHolding;
 
   useEffect(() => {
@@ -758,7 +772,10 @@ export function InstagramStory<
   const handlePageSelected = useCallback(
     (event: NativeSyntheticEvent<PageSelectedEvent>) => {
       const nextIndex = event.nativeEvent.position;
-      setActiveStoryIndex(nextIndex);
+      if (activeStoryIndexRef.current !== nextIndex) {
+        activeStoryIndexRef.current = nextIndex;
+        setActiveStoryIndex(nextIndex);
+      }
       const story = stories[nextIndex];
       if (story) {
         onStoryChange?.(nextIndex, story);
@@ -775,7 +792,13 @@ export function InstagramStory<
 
   const handlePageScrollStateChanged = useCallback(
     (event: NativeSyntheticEvent<PageScrollStateChangedEvent>) => {
-      setScrollState(event.nativeEvent.pageScrollState);
+      const nextState = event.nativeEvent.pageScrollState;
+      setScrollState((prev) => {
+        if ((prev === 'dragging') === (nextState === 'dragging')) {
+          return prev;
+        }
+        return nextState;
+      });
     },
     []
   );

@@ -1,24 +1,24 @@
 # react-native-instagram-story
 
+> **Android Only:** This library supports **Android (New Architecture / Fabric) only**. iOS is not supported.
+
 React Native Instagram Story library powered by a native Android Fabric `ViewPager2` container with hardware-accelerated 3D cube transitions.
 
 ## Features
 
-- **Native 3D Cube Transition (Android Fabric):** Smooth page-to-page 3D cube rotation driven natively via `ViewPager2` and a custom `PageTransformer` (`perspective`, `cubeAngle`).
+- **Native 3D Cube Transition (Android Fabric):** Smooth page-to-page 3D cube rotation driven natively via `ViewPager2`, `RecyclerView` view recycling, and a custom `PageTransformer` (`perspective`, `cubeAngle`) running on the Android UI/RenderThread.
 - **Image & Video Story Support (Zero Extra Dependencies):** Supports both image and video stories out of the box (`videoUri`, `video`, `type: 'video'`, `mediaType: 'video'`, or video URL extensions), powered by Android's built-in native player (`TextureView` + `MediaPlayer`) with automatic progress bar synchronization, buffering indicator, poster thumbnails, pause-on-hold, and optional custom `renderVideo`.
-- **Flexible JSON & Mixed Media Sources:** Pass any custom backend JSON object shape. Supports both remote URLs, `{ uri }` objects, and local `require(...)` assets for `avatarUri`, `userUri`, `imageUri`, `videoUri`, `video`, `posterUri`, and `thumbnailUri`, forwarding normalized `storyData` directly to the native view.
+- **Flexible JSON & Mixed Media Sources:** Pass any custom backend JSON object shape. Supports remote URLs, `{ uri }` objects, and local `require(...)` assets for `avatarUri`, `userUri`, `imageUri`, `videoUri`, `video`, `posterUri`, and `thumbnailUri`.
 - **Auto-Next & Gesture Controls:**
   - Configurable auto-advance timer (default `10000` ms / 10 seconds per image item, or natural video duration for video stories)
   - Tap left/right edges to navigate previous/next
-  - Press and hold to pause progress (and pause video playback)
+  - Press and hold to pause progress (and pause video playback) with optional overlay hiding
   - Swipe down to close with customizable drag threshold
 - **Watch Progress, Resume & Story Ordering (`useStoryProgress`):**
   - Tracks seen story items per avatar
   - Resumes an avatar from its first unwatched story item when reopened
   - Moves fully watched avatars to the end of `orderedStories` when the viewer closes (so you can render their ring gray)
 - **Custom Rendering:** Full control over story item content (`renderItem`), video player (`renderVideo`), header (`renderHeader`), footer (`renderFooter`), and per-item duration (`getItemDuration`).
-
-> **Platform note:** Built specifically for **Android (New Architecture / Fabric)**.
 
 ## Installation
 
@@ -31,16 +31,16 @@ yarn add react-native-instagram-story
 ### Requirements
 
 - React Native with **New Architecture (Fabric)** enabled on Android.
+- No extra JS peer dependencies (`react-native-reanimated`, `react-native-gesture-handler`, or external video packages are not required).
 - Codegen artifacts are generated automatically during Android Gradle builds. After installing in your app, rebuild your Android app so native specs and autolinking are compiled.
 
 ## Usage
 
 ### Story Viewer with Watch Progress & Flexible Data (`InstagramStory` + `useStoryProgress`)
 
-`stories` accepts any object structure from your backend. Both remote URLs and local `require(...)` assets are supported on `avatarUri`, `userUri`, and `imageUri` (or resolved via `getItemImage`).
+`stories` accepts any object structure from your backend. Both remote URLs and local `require(...)` assets are supported on `avatarUri`, `userUri`, `imageUri`, `videoUri`, `video`, `posterUri`, and `thumbnailUri` (or resolved via custom `getItem*` extractors).
 
 ```tsx
-import * as React from 'react';
 import {
   Image,
   Pressable,
@@ -63,6 +63,7 @@ interface CustomStoryItem {
   posterUri?: string | number;
   caption?: string;
   duration?: number;
+  muted?: boolean;
   [key: string]: unknown;
 }
 
@@ -173,6 +174,55 @@ const styles = StyleSheet.create({
 });
 ```
 
+### Video Auto-Detection
+
+Without `getItemType`, each item is automatically detected as `'video'` when any of the following is true:
+
+1. `item.type` or `item.mediaType` is `'video'`
+2. `item.videoUri` or `item.video` is provided (or `getItemVideo` returns a URI)
+3. `item.uri` or `item.url` ends with a video extension (`.mp4`, `.mov`, `.m4v`, `.webm`, `.m3u8`, `.mkv`, `.3gp`, `.avi`, `.ts`)
+
+### Custom Video Player (`renderVideo`)
+
+By default, video items play in the native Android `TextureView` + `MediaPlayer` layer. If you prefer `react-native-video` or `expo-video`, pass `renderVideo` and forward the lifecycle callbacks so the progress bar stays synced:
+
+```tsx
+<InstagramStory
+  stories={orderedStories}
+  visible={isOpen}
+  onClose={closeStory}
+  renderVideo={({
+    videoUri,
+    isActive,
+    isPaused,
+    muted,
+    onVideoLoad,
+    onVideoProgress,
+    onVideoBuffer,
+    onVideoEnd,
+    onVideoError,
+  }) => (
+    <Video
+      source={{ uri: videoUri }}
+      style={StyleSheet.absoluteFill}
+      resizeMode="cover"
+      paused={!isActive || isPaused}
+      muted={muted}
+      onLoad={(e) => onVideoLoad({ duration: e.duration * 1000 })}
+      onProgress={(e) =>
+        onVideoProgress({
+          currentTime: e.currentTime * 1000,
+          duration: e.playableDuration * 1000,
+        })
+      }
+      onBuffer={({ isBuffering }) => onVideoBuffer(isBuffering)}
+      onEnd={onVideoEnd}
+      onError={onVideoError}
+    />
+  )}
+/>
+```
+
 ## API Reference
 
 ### `<InstagramStory />` Props
@@ -199,7 +249,7 @@ const styles = StyleSheet.create({
 | `videoResizeMode`       | `'cover' \| 'contain' \| 'stretch'`            | `'cover'`                                                                             | Resize mode for built-in video playback.                                                                                                                                                                                              |
 | `repeatVideo`           | `boolean`                                      | `false`                                                                               | Loop video stories when playback finishes instead of advancing.                                                                                                                                                                       |
 | `progressBarColor`      | `string`                                       | `'#FFFFFF'`                                                                           | Filled progress bar color.                                                                                                                                                                                                            |
-| `progressTrackColor`    | `string`                                       | `'rgba(255,255,255,0.3)'`                                                             | Background track color for progress segments.                                                                                                                                                                                         |
+| `progressTrackColor`    | `string`                                       | `'rgba(255, 255, 255, 0.32)'`                                                         | Background track color for progress segments.                                                                                                                                                                                         |
 | `backdropColor`         | `string`                                       | `'#000000'`                                                                           | Backdrop color visible behind the viewer during swipe-down.                                                                                                                                                                           |
 | `perspective`           | `number`                                       | `4.5`                                                                                 | Camera distance multiplier relative to view width for 3D cube perspective.                                                                                                                                                            |
 | `cubeAngle`             | `number`                                       | `90`                                                                                  | Maximum Y-axis rotation angle in degrees at full page offset.                                                                                                                                                                         |
@@ -247,9 +297,18 @@ Manages per-item seen tracking, resume-at-unwatched-item logic, and moving watch
 - `markItemSeen(info)`: Pass to `<InstagramStory onStoryItemSeen={markItemSeen} />`.
 - `resetProgress()`: Clears all recorded progress.
 
-### `resolveMediaUri(source)` / `resolveImageUri(source)`
+### Media Helpers
 
-Helpers that convert a URL string, `{ uri: string }` object, or numeric local `require(...)` asset ID into a resolved URI string (`string | undefined`).
+- `resolveMediaUri(source)` / `resolveImageUri(source)`: Converts a URL string, `{ uri: string }` object, or numeric local `require(...)` asset ID into a resolved URI string (`string | undefined`).
+- `inferMediaTypeFromUri(uri)`: Returns `'video'` when a URI path ends with a recognized video extension (ignoring query strings and hashes), otherwise `undefined`.
+
+## Example App
+
+Run the interactive Android example app (includes toggles for all props, built-in video playback, and live event logs):
+
+```sh
+yarn example android
+```
 
 ## Contributing
 
