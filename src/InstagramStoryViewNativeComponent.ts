@@ -1,4 +1,4 @@
-import type { ComponentRef } from 'react';
+import type * as React from 'react';
 import {
   codegenNativeCommands,
   codegenNativeComponent,
@@ -80,15 +80,15 @@ type ComponentType = HostComponent<NativeProps>;
 
 export interface NativeCommands {
   setPage: (
-    viewRef: ComponentRef<ComponentType>,
+    viewRef: React.ComponentRef<ComponentType>,
     selectedPage: CodegenTypes.Int32
   ) => void;
   setPageWithoutAnimation: (
-    viewRef: ComponentRef<ComponentType>,
+    viewRef: React.ComponentRef<ComponentType>,
     selectedPage: CodegenTypes.Int32
   ) => void;
   seekVideo: (
-    viewRef: ComponentRef<ComponentType>,
+    viewRef: React.ComponentRef<ComponentType>,
     position: CodegenTypes.Int32,
     positionMs: CodegenTypes.Double
   ) => void;

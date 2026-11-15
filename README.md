@@ -20,13 +20,90 @@ React Native Instagram Story library powered by a native Android Fabric `ViewPag
   - Moves fully watched avatars to the end of `orderedStories` when the viewer closes (so you can render their ring gray)
 - **Custom Rendering:** Full control over story item content (`renderItem`), video player (`renderVideo`), header (`renderHeader`), footer (`renderFooter`), and per-item duration (`getItemDuration`).
 
+## Performance Benchmark (Native Fabric vs. Pure JS)
+
+Side-by-side 3D cube transition recordings and empirical measurements captured on the same Android device (`emulator-5554`, `1080×2400 @ 60 Hz`) under the same ~`4.84 s` horizontal swipe workload comparing the native Fabric `ViewPager2` + Android `Camera`/`Matrix` `PageTransformer` implementation against a Pure JS `PanResponder` + `Animated.Value` (`useNativeDriver: false`) implementation:
+
+<table>
+  <thead>
+    <tr>
+      <th align="center">Native Fabric (<code>ViewPager2</code>)</th>
+      <th align="center">Pure JS (<code>PanResponder</code> + <code>Animated</code>)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="center">
+        <img src="./assets/benchmark-native.gif" width="240" alt="Native Fabric 3D Cube Transition Benchmark" />
+      </td>
+      <td align="center">
+        <img src="./assets/benchmark-js.gif" width="240" alt="Pure JS 3D Cube Transition Benchmark" />
+      </td>
+    </tr>
+    <tr>
+      <td align="center"><b>6.56% OS jank</b> · <code>244</code> frames rendered</td>
+      <td align="center"><b>70.93% OS jank</b> · <code>86</code> frames rendered</td>
+    </tr>
+  </tbody>
+</table>
+
+### Layer 1 — JavaScript Thread & React Reconciler Telemetry
+
+Measured via an in-app `requestAnimationFrame` delta sampler (`Δt > 16.67 ms` jank, `Δt > 33.33 ms` severe jank) and React `<Profiler>` commit counter:
+
+| Metric | Native Fabric (`ViewPager2`) | Pure JS (`PanResponder` + `Animated`) |
+| --- | ---: | ---: |
+| Duration | `4840.96 ms` | `4833.24 ms` |
+| rAF Samples | `123` | `74` |
+| Effective JS FPS | `25.4 FPS` | `15.3 FPS` |
+| Mean Frame Time (`μ`) | `39.36 ms` | `65.31 ms` |
+| Frame Time StdDev (`σ`) | `44.48 ms` | `31.53 ms` |
+| Median Frame Time (P<sub>50</sub>) | `17.85 ms` | `75.80 ms` |
+| P<sub>90</sub> / P<sub>95</sub> / P<sub>99</sub> | `132.28` / `141.19` / `170.04 ms` | `94.45` / `105.89` / `146.34 ms` |
+| Max Frame Time | `176.41 ms` | `146.34 ms` |
+| Jank Frames (`> 16.67 ms`) | `60` (`48.78%`) | `60` (`81.08%`) |
+| Severe Jank (`> 33.33 ms`) | `31` | `56` |
+| 60 FPS Budget Compliance | `51.22%` | `18.92%` |
+| React `<Profiler>` Commits | `155` | `280` |
+
+### Layer 2 — Android OS Frame Rendering (`adb shell dumpsys gfxinfo`)
+
+Hardware UI / RenderThread metrics collected directly from Android Graphics Info for the same swipe window:
+
+| Android `gfxinfo` Metric | Native Fabric (`ViewPager2`) | Pure JS (`PanResponder` + `Animated`) |
+| --- | ---: | ---: |
+| Total Frames Rendered | `244` | `86` |
+| Janky Frames | `16` (`6.56%`) | `61` (`70.93%`) |
+| P<sub>50</sub> GPU/UI Frame Time | `29 ms` | `32 ms` |
+| P<sub>90</sub> Frame Time | `42 ms` | `36 ms` |
+| P<sub>95</sub> Frame Time | `48 ms` | `48 ms` |
+| P<sub>99</sub> Frame Time | `57 ms` | `77 ms` |
+| Slow UI Thread Frames | `9` | `12` |
+| Slow Issue Draw Commands | `14` | `57` |
+| Active Native `Views` | `246` | `360` |
+
 ## Installation
 
+This package is not published on npm. You can install it directly from GitHub or embed it locally into your React Native Android app:
+
+### Option 1: Install from GitHub
+
 ```sh
-npm install react-native-instagram-story
+yarn add https://github.com/ismkerem/react-native-instagram-story.git
 # or
-yarn add react-native-instagram-story
+npm install https://github.com/ismkerem/react-native-instagram-story.git
 ```
+
+### Option 2: Embed locally in your app
+
+1. Clone or copy this repository into your project (for example, `packages/react-native-instagram-story`).
+2. Add it as a local dependency in your app's `package.json`:
+
+```json
+"react-native-instagram-story": "file:./packages/react-native-instagram-story"
+```
+
+3. Install dependencies and rebuild your Android app so React Native autolinking & Codegen compile the native `InstagramStoryView` Fabric component.
 
 ### Requirements
 
@@ -309,12 +386,6 @@ Run the interactive Android example app (includes toggles for all props, built-i
 ```sh
 yarn example android
 ```
-
-## Contributing
-
-- [Development workflow](CONTRIBUTING.md#development-workflow)
-- [Sending a pull request](CONTRIBUTING.md#sending-a-pull-request)
-- [Code of conduct](CODE_OF_CONDUCT.md)
 
 ## License
 
