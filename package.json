@@ -1,6 +1,7 @@
 {
   "name": "react-native-instagram-story",
   "version": "0.1.0",
+  "private": true,
   "description": "React Native Instagram Story library with native Fabric 3D cube transition",
   "main": "./lib/module/index.js",
   "types": "./lib/typescript/src/index.d.ts",
@@ -34,8 +35,7 @@
     "prepare": "bob build",
     "typecheck": "tsc",
     "lint": "eslint \"**/*.{js,ts,tsx}\"",
-    "test": "jest",
-    "release": "release-it --only-version"
+    "test": "jest"
   },
   "keywords": [
     "react-native",
@@ -51,9 +51,6 @@
     "url": "https://github.com/ismkerem/react-native-instagram-story/issues"
   },
   "homepage": "https://github.com/ismkerem/react-native-instagram-story#readme",
-  "publishConfig": {
-    "registry": "https://registry.npmjs.org/"
-  },
   "devDependencies": {
     "@commitlint/config-conventional": "^21.2.0",
     "@eslint/compat": "^2.1.0",
@@ -63,7 +60,6 @@
     "@react-native/babel-preset": "0.86.2",
     "@react-native/eslint-config": "0.86.2",
     "@react-native/jest-preset": "0.86.2",
-    "@release-it/conventional-changelog": "^12.0.0",
     "@types/react": "^19.2.0",
     "commitlint": "^21.2.1",
     "del-cli": "^7.0.0",
@@ -78,7 +74,6 @@
     "react-native": "0.86.2",
     "react-native-builder-bob": "^0.44.1",
     "react-native-web": "~0.21.2",
-    "release-it": "^21.0.1",
     "turbo": "^2.10.8",
     "typescript": "^6.0.3"
   },
@@ -142,25 +137,6 @@
       "@commitlint/config-conventional"
     ]
   },
-  "release-it": {
-    "git": {
-      "commitMessage": "chore: release ${version}",
-      "tagName": "v${version}"
-    },
-    "npm": {
-      "publish": true
-    },
-    "github": {
-      "release": true
-    },
-    "plugins": {
-      "@release-it/conventional-changelog": {
-        "preset": {
-          "name": "angular"
-        }
-      }
-    }
-  },
   "create-react-native-library": {
     "type": "fabric-view",
     "languages": "kotlin-objc",
@@ -168,7 +144,6 @@
       "eslint",
       "jest",
       "lefthook",
-      "release-it",
       "vite"
     ],
     "version": "0.63.1"
