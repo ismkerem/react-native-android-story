@@ -1,4 +1,4 @@
-package com.instagramstory
+package com.androidstory
 
 import com.facebook.react.bridge.Dynamic
 import com.facebook.react.bridge.ReadableArray

@@ -20,10 +20,10 @@ jest.doMock('react', () => {
   };
 });
 
-const { InstagramStory } =
-  require('../InstagramStory') as typeof import('../InstagramStory');
-const { InstagramStoryView } =
-  require('../InstagramStoryView') as typeof import('../InstagramStoryView');
+const { AndroidStory } =
+  require('../AndroidStory') as typeof import('../AndroidStory');
+const { AndroidStoryView } =
+  require('../AndroidStoryView') as typeof import('../AndroidStoryView');
 const { inferMediaTypeFromUri, normalizeNativeStoryData, resolveMediaUri } =
   require('../resolveImageUri') as typeof import('../resolveImageUri');
 
@@ -60,22 +60,22 @@ const STORIES = [
   },
 ];
 
-describe('InstagramStory showCloseButton prop', () => {
+describe('AndroidStory showCloseButton prop', () => {
   it('renders the close button by default when onClose is provided', () => {
-    const element = InstagramStory({
+    const element = AndroidStory({
       stories: STORIES,
       onClose: jest.fn(),
     });
 
     const closeButtons = findElements(
       element,
-      (el) => el.props.testID === 'instagram-story-close-button'
+      (el) => el.props.testID === 'android-story-close-button'
     );
     expect(closeButtons).toHaveLength(1);
   });
 
   it('renders the close button when showCloseButton is true', () => {
-    const element = InstagramStory({
+    const element = AndroidStory({
       stories: STORIES,
       onClose: jest.fn(),
       showCloseButton: true,
@@ -83,13 +83,13 @@ describe('InstagramStory showCloseButton prop', () => {
 
     const closeButtons = findElements(
       element,
-      (el) => el.props.testID === 'instagram-story-close-button'
+      (el) => el.props.testID === 'android-story-close-button'
     );
     expect(closeButtons).toHaveLength(1);
   });
 
   it('hides the close button when showCloseButton is false', () => {
-    const element = InstagramStory({
+    const element = AndroidStory({
       stories: STORIES,
       onClose: jest.fn(),
       showCloseButton: false,
@@ -97,7 +97,7 @@ describe('InstagramStory showCloseButton prop', () => {
 
     const closeButtons = findElements(
       element,
-      (el) => el.props.testID === 'instagram-story-close-button'
+      (el) => el.props.testID === 'android-story-close-button'
     );
     expect(closeButtons).toHaveLength(0);
   });
@@ -105,7 +105,7 @@ describe('InstagramStory showCloseButton prop', () => {
   it('passes showCloseButton to renderHeader', () => {
     const renderHeader = jest.fn(() => null);
 
-    InstagramStory({
+    AndroidStory({
       stories: STORIES,
       onClose: jest.fn(),
       showCloseButton: false,
@@ -198,9 +198,9 @@ describe('media URI resolution and inference', () => {
   });
 });
 
-describe('InstagramStory unified video support', () => {
-  it('configures unified InstagramStoryView pageMedia for video items and disables built-in media on image pages', () => {
-    const element = InstagramStory({
+describe('AndroidStory unified video support', () => {
+  it('configures unified AndroidStoryView pageMedia for video items and disables built-in media on image pages', () => {
+    const element = AndroidStory({
       stories: [
         {
           id: 's1',
@@ -240,7 +240,7 @@ describe('InstagramStory unified video support', () => {
 
     const storyViews = findElements(
       element,
-      (el) => el.type === InstagramStoryView
+      (el) => el.type === AndroidStoryView
     );
 
     expect(storyViews).toHaveLength(1);
@@ -272,7 +272,7 @@ describe('InstagramStory unified video support', () => {
 
   it('auto-detects video items from .mp4 uri without explicit type', () => {
     const renderHeader = jest.fn(() => null);
-    const element = InstagramStory({
+    const element = AndroidStory({
       stories: [
         {
           id: 's1',
@@ -284,7 +284,7 @@ describe('InstagramStory unified video support', () => {
 
     const storyViews = findElements(
       element,
-      (el) => el.type === InstagramStoryView
+      (el) => el.type === AndroidStoryView
     );
     expect(storyViews).toHaveLength(1);
     expect(storyViews[0]?.props.pageMedia).toEqual([
@@ -301,12 +301,12 @@ describe('InstagramStory unified video support', () => {
     );
   });
 
-  it('routes unified InstagramStoryView native video events to onVideoLoad, onVideoEnd, and onVideoError', () => {
+  it('routes unified AndroidStoryView native video events to onVideoLoad, onVideoEnd, and onVideoError', () => {
     const onVideoLoad = jest.fn();
     const onVideoEnd = jest.fn();
     const onVideoError = jest.fn();
 
-    const element = InstagramStory({
+    const element = AndroidStory({
       stories: [
         {
           id: 's1',
@@ -326,7 +326,7 @@ describe('InstagramStory unified video support', () => {
 
     const storyView = findElements(
       element,
-      (el) => el.type === InstagramStoryView
+      (el) => el.type === AndroidStoryView
     )[0];
 
     expect(storyView).toBeDefined();
@@ -386,7 +386,7 @@ describe('InstagramStory unified video support', () => {
     const onVideoError = jest.fn();
     const renderVideo = jest.fn((_info: unknown) => null);
 
-    const element = InstagramStory({
+    const element = AndroidStory({
       stories: [
         {
           id: 's1',
@@ -409,7 +409,7 @@ describe('InstagramStory unified video support', () => {
 
     const storyView = findElements(
       element,
-      (el) => el.type === InstagramStoryView
+      (el) => el.type === AndroidStoryView
     )[0];
     expect(storyView?.props.pageMedia).toEqual([{ enabled: false }]);
 
@@ -458,7 +458,7 @@ describe('InstagramStory unified video support', () => {
   });
 
   it('supports custom getItemType, getItemVideo, and getItemPoster resolvers', () => {
-    const element = InstagramStory({
+    const element = AndroidStory({
       stories: [
         {
           id: 's1',
@@ -481,7 +481,7 @@ describe('InstagramStory unified video support', () => {
 
     const storyViews = findElements(
       element,
-      (el) => el.type === InstagramStoryView
+      (el) => el.type === AndroidStoryView
     );
     expect(storyViews).toHaveLength(1);
     expect(storyViews[0]?.props.pageMedia).toEqual([
@@ -496,7 +496,7 @@ describe('InstagramStory unified video support', () => {
   });
 
   it('shows a loading indicator while a built-in video is buffering unless disabled', () => {
-    const withSpinner = InstagramStory({
+    const withSpinner = AndroidStory({
       stories: [
         {
           id: 's1',
@@ -509,7 +509,7 @@ describe('InstagramStory unified video support', () => {
       findElements(withSpinner, (el) => el.type === ActivityIndicator)
     ).toHaveLength(1);
 
-    const withoutSpinner = InstagramStory({
+    const withoutSpinner = AndroidStory({
       stories: [
         {
           id: 's1',
@@ -525,9 +525,9 @@ describe('InstagramStory unified video support', () => {
   });
 });
 
-describe('InstagramStoryView unified standalone image and video rendering', () => {
-  it('forwards normalized standalone video and image props to NativeInstagramStoryView', () => {
-    const videoTree = renderForwardRef(InstagramStoryView, {
+describe('AndroidStoryView unified standalone image and video rendering', () => {
+  it('forwards normalized standalone video and image props to NativeAndroidStoryView', () => {
+    const videoTree = renderForwardRef(AndroidStoryView, {
       mediaType: 'video',
       videoUri: { uri: 'https://example.com/story.mp4' },
       posterUri: { uri: 'https://example.com/poster.jpg' },
@@ -549,7 +549,7 @@ describe('InstagramStoryView unified standalone image and video rendering', () =
       videoResizeMode: 'contain',
     });
 
-    const imageTree = renderForwardRef(InstagramStoryView, {
+    const imageTree = renderForwardRef(AndroidStoryView, {
       mediaType: 'image',
       source: { uri: 'https://example.com/photo.jpg' },
       videoResizeMode: 'cover',

@@ -104,11 +104,11 @@
     ]
   },
   "codegenConfig": {
-    "name": "InstagramStoryViewSpec",
+    "name": "AndroidStoryViewSpec",
     "type": "all",
     "jsSrcsDir": "src",
     "android": {
-      "javaPackageName": "com.instagramstory"
+      "javaPackageName": "com.androidstory"
     }
   },
   "prettier": {

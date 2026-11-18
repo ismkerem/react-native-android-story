@@ -36,7 +36,7 @@ export interface UseStoryProgressResult<
    */
   isOpen: boolean;
   /**
-   * Starting story index inside `orderedStories` for `<InstagramStory>`.
+   * Starting story index inside `orderedStories` for `<AndroidStory>`.
    */
   initialStoryIndex: number;
   /**
@@ -52,11 +52,11 @@ export interface UseStoryProgressResult<
    */
   isStoryWatched: (story: TStory) => boolean;
   /**
-   * Pass to `<InstagramStory getInitialItemIndex={getInitialItemIndex} />` to resume from the first unwatched item.
+   * Pass to `<AndroidStory getInitialItemIndex={getInitialItemIndex} />` to resume from the first unwatched item.
    */
   getInitialItemIndex: (story: TStory) => number;
   /**
-   * Pass to `<InstagramStory onStoryItemSeen={markItemSeen} />` to record seen items.
+   * Pass to `<AndroidStory onStoryItemSeen={markItemSeen} />` to record seen items.
    */
   markItemSeen: (info: StoryItemSeenInfo<TStory, TItem>) => void;
   /**

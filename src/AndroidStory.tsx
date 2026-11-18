@@ -13,15 +13,15 @@ import {
   View,
   type NativeSyntheticEvent,
 } from 'react-native';
-import { InstagramStoryView } from './InstagramStoryView';
+import { AndroidStoryView } from './AndroidStoryView';
 import {
   inferMediaTypeFromUri,
   resolveImageUri,
   resolveMediaUri,
 } from './resolveImageUri';
 import type {
-  InstagramStoryProps,
-  InstagramStoryViewRef,
+  AndroidStoryProps,
+  AndroidStoryViewRef,
   PageScrollState,
   PageScrollStateChangedEvent,
   PageSelectedEvent,
@@ -113,7 +113,7 @@ function ProgressSegment({
   );
 }
 
-export function InstagramStory<
+export function AndroidStory<
   TStory extends Record<string, unknown> = StoryGroupData,
   TItem extends Record<string, unknown> = StoryItemData,
 >({
@@ -161,10 +161,10 @@ export function InstagramStory<
   onVideoError,
   onClose,
   onFinish,
-}: InstagramStoryProps<TStory, TItem>) {
+}: AndroidStoryProps<TStory, TItem>) {
   const { height: windowHeight } = useWindowDimensions();
 
-  const storyViewRef = useRef<InstagramStoryViewRef>(null);
+  const storyViewRef = useRef<AndroidStoryViewRef>(null);
 
   const clampedInitialStory = Math.max(
     0,
@@ -1260,7 +1260,7 @@ export function InstagramStory<
           },
         ]}
       >
-        <InstagramStoryView
+        <AndroidStoryView
           ref={storyViewRef}
           style={styles.pager}
           storyData={nativeStoryData}
@@ -1510,7 +1510,7 @@ export function InstagramStory<
                       )}
                       {showCloseButton && onClose && (
                         <Pressable
-                          testID="instagram-story-close-button"
+                          testID="android-story-close-button"
                           accessibilityRole="button"
                           accessibilityLabel="Close story"
                           style={styles.closeButton}
@@ -1536,7 +1536,7 @@ export function InstagramStory<
               </View>
             );
           })}
-        </InstagramStoryView>
+        </AndroidStoryView>
       </Animated.View>
     </View>
   );

@@ -6,7 +6,10 @@ import {
   type HostComponent,
   type ViewProps,
 } from 'react-native';
-
+/**
+ *
+ * CODEGEN
+ */
 export type PageSelectedEventData = Readonly<{
   position: CodegenTypes.Int32;
 }>;
@@ -98,4 +101,4 @@ export const Commands: NativeCommands = codegenNativeCommands<NativeCommands>({
   supportedCommands: ['setPage', 'setPageWithoutAnimation', 'seekVideo'],
 });
 
-export default codegenNativeComponent<NativeProps>('InstagramStoryView');
+export default codegenNativeComponent<NativeProps>('AndroidStoryView');
