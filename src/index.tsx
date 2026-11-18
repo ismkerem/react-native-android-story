@@ -1,5 +1,5 @@
-export { InstagramStory } from './InstagramStory';
-export { InstagramStoryView } from './InstagramStoryView';
+export { AndroidStory } from './AndroidStory';
+export { AndroidStoryView } from './AndroidStoryView';
 export {
   inferMediaTypeFromUri,
   resolveImageUri,
@@ -11,9 +11,9 @@ export {
   type UseStoryProgressResult,
 } from './useStoryProgress';
 export type {
-  InstagramStoryProps,
-  InstagramStoryViewProps,
-  InstagramStoryViewRef,
+  AndroidStoryProps,
+  AndroidStoryViewProps,
+  AndroidStoryViewRef,
   StoryGroupData,
   StoryImageSource,
   StoryItemData,

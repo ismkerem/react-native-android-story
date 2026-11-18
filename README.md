@@ -103,7 +103,7 @@ npm install https://github.com/ismkerem/react-native-android-story.git
 "react-native-android-story": "file:./packages/react-native-android-story"
 ```
 
-3. Install dependencies and rebuild your Android app so React Native autolinking & Codegen compile the native `InstagramStoryView` Fabric component.
+3. Install dependencies and rebuild your Android app so React Native autolinking & Codegen compile the native `AndroidStoryView` Fabric component.
 
 ### Requirements
 
@@ -113,7 +113,7 @@ npm install https://github.com/ismkerem/react-native-android-story.git
 
 ## Usage
 
-### Story Viewer with Watch Progress & Flexible Data (`InstagramStory` + `useStoryProgress`)
+### Story Viewer with Watch Progress & Flexible Data (`AndroidStory` + `useStoryProgress`)
 
 `stories` accepts any object structure from your backend. Both remote URLs and local `require(...)` assets are supported on `avatarUri`, `userUri`, `imageUri`, `videoUri`, `video`, `posterUri`, and `thumbnailUri` (or resolved via custom `getItem*` extractors).
 
@@ -127,7 +127,7 @@ import {
   View,
 } from 'react-native';
 import {
-  InstagramStory,
+  AndroidStory,
   resolveImageUri,
   useStoryProgress,
 } from 'react-native-android-story';
@@ -225,7 +225,7 @@ export function App() {
         })}
       </View>
 
-      <InstagramStory
+      <AndroidStory
         stories={orderedStories}
         visible={isOpen}
         initialStoryIndex={initialStoryIndex}
@@ -264,7 +264,7 @@ Without `getItemType`, each item is automatically detected as `'video'` when any
 By default, video items play in the native Android `TextureView` + `MediaPlayer` layer. If you prefer `react-native-video` or `expo-video`, pass `renderVideo` and forward the lifecycle callbacks so the progress bar stays synced:
 
 ```tsx
-<InstagramStory
+<AndroidStory
   stories={orderedStories}
   visible={isOpen}
   onClose={closeStory}
@@ -302,7 +302,7 @@ By default, video items play in the native Android `TextureView` + `MediaPlayer`
 
 ## API Reference
 
-### `<InstagramStory />` Props
+### `<AndroidStory />` Props
 
 | Prop                    | Type                                           | Default                                                                               | Description                                                                                                                                                                                                                           |
 | ----------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -339,7 +339,7 @@ By default, video items play in the native Android `TextureView` + `MediaPlayer`
 | `getItemVideo`          | `(item, story) => string \| undefined`         | `resolveMediaUri(item.videoUri ?? item.video)`                                        | Resolve a video URI (falls back to `uri`/`url` when type is `'video'`).                                                                                                                                                               |
 | `getItemPoster`         | `(item, story) => string \| undefined`         | `resolveMediaUri(item.posterUri ?? item.thumbnailUri ?? item.imageUri ?? item.image)` | Resolve a poster/thumbnail URI displayed while a video loads.                                                                                                                                                                         |
 | `renderItem`            | `(info) => ReactNode`                          | Default image / video                                                                 | Custom renderer for each story item (`{ item, story, itemIndex, storyIndex, isActive, isPaused, progress, mediaType, imageUri, videoUri, posterUri, muted, onVideoLoad, onVideoProgress, onVideoBuffer, onVideoEnd, onVideoError }`). |
-| `renderVideo`           | `(info) => ReactNode`                          | Built-in player inside `<InstagramStoryView />`                                       | Custom video renderer (e.g., `react-native-video` or `expo-video`) receiving video URI, `isPaused`, `muted`, and progress sync callbacks.                                                                                             |
+| `renderVideo`           | `(info) => ReactNode`                          | Built-in player inside `<AndroidStoryView />`                                       | Custom video renderer (e.g., `react-native-video` or `expo-video`) receiving video URI, `isPaused`, `muted`, and progress sync callbacks.                                                                                             |
 | `renderHeader`          | `(info) => ReactNode`                          | Default avatar + title + close                                                        | Custom header renderer below the progress bar (`{ story, item, storyIndex, itemIndex, isActive, showUser, showCloseButton, mediaType, close }`).                                                                                      |
 | `renderFooter`          | `(info) => ReactNode`                          | —                                                                                     | Custom footer renderer (e.g. reply input, reactions).                                                                                                                                                                                 |
 | `onStoryChange`         | `(storyIndex, story) => void`                  | —                                                                                     | Called when the active story group changes.                                                                                                                                                                                           |
@@ -365,13 +365,13 @@ Manages per-item seen tracking, resume-at-unwatched-item logic, and moving watch
 **Returns:**
 
 - `orderedStories`: Reordered array with unwatched stories first and fully watched stories moved to the end after `closeStory()`.
-- `isOpen`: Boolean state for `<InstagramStory visible={isOpen} />`.
-- `initialStoryIndex`: Index inside `orderedStories` for `<InstagramStory initialStoryIndex={initialStoryIndex} />`.
+- `isOpen`: Boolean state for `<AndroidStory visible={isOpen} />`.
+- `initialStoryIndex`: Index inside `orderedStories` for `<AndroidStory initialStoryIndex={initialStoryIndex} />`.
 - `openStory(storyOrIndex)`: Open the viewer at a specific story object or index.
 - `closeStory()`: Close the viewer and reorder completed avatars to the end.
 - `isStoryWatched(story)`: Returns `true` once every item in the story has been seen.
-- `getInitialItemIndex(story)`: Pass to `<InstagramStory getInitialItemIndex={getInitialItemIndex} />` to resume from the first unwatched item.
-- `markItemSeen(info)`: Pass to `<InstagramStory onStoryItemSeen={markItemSeen} />`.
+- `getInitialItemIndex(story)`: Pass to `<AndroidStory getInitialItemIndex={getInitialItemIndex} />` to resume from the first unwatched item.
+- `markItemSeen(info)`: Pass to `<AndroidStory onStoryItemSeen={markItemSeen} />`.
 - `resetProgress()`: Clears all recorded progress.
 
 ### Media Helpers

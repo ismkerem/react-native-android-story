@@ -9,19 +9,19 @@ import {
   type ComponentRef,
 } from 'react';
 import { StyleSheet, View } from 'react-native';
-import NativeInstagramStoryView, {
+import NativeAndroidStoryView, {
   Commands,
-} from './InstagramStoryViewNativeComponent';
+} from './AndroidStoryViewNativeComponent';
 import { normalizeNativeStoryData, resolveMediaUri } from './resolveImageUri';
 import type {
-  InstagramStoryViewProps,
-  InstagramStoryViewRef,
+  AndroidStoryViewProps,
+  AndroidStoryViewRef,
   PageScrollState,
 } from './types';
 
 export type {
-  InstagramStoryViewProps,
-  InstagramStoryViewRef,
+  AndroidStoryViewProps,
+  AndroidStoryViewRef,
   OverScrollMode,
   PageScrollEvent,
   PageScrollState,
@@ -38,9 +38,9 @@ export type {
   StoryViewVideoProgressEvent,
 } from './types';
 
-export const InstagramStoryView = forwardRef<
-  InstagramStoryViewRef,
-  InstagramStoryViewProps
+export const AndroidStoryView = forwardRef<
+  AndroidStoryViewRef,
+  AndroidStoryViewProps
 >(
   (
     {
@@ -67,8 +67,7 @@ export const InstagramStoryView = forwardRef<
     },
     ref
   ) => {
-    const nativeRef =
-      useRef<ComponentRef<typeof NativeInstagramStoryView>>(null);
+    const nativeRef = useRef<ComponentRef<typeof NativeAndroidStoryView>>(null);
 
     useImperativeHandle(
       ref,
@@ -163,7 +162,7 @@ export const InstagramStoryView = forwardRef<
     );
 
     return (
-      <NativeInstagramStoryView
+      <NativeAndroidStoryView
         ref={nativeRef}
         storyData={normalizedStoryData}
         pageMedia={normalizedPageMedia}
@@ -188,12 +187,12 @@ export const InstagramStoryView = forwardRef<
         {...rest}
       >
         {wrappedChildren}
-      </NativeInstagramStoryView>
+      </NativeAndroidStoryView>
     );
   }
 );
 
-InstagramStoryView.displayName = 'InstagramStoryView';
+AndroidStoryView.displayName = 'AndroidStoryView';
 
 const styles = StyleSheet.create({
   page: {

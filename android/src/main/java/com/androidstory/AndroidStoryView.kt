@@ -1,4 +1,4 @@
-package com.instagramstory
+package com.androidstory
 
 import android.content.Context
 import android.graphics.Bitmap
@@ -30,14 +30,14 @@ import com.facebook.react.bridge.ReadableArray
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.ReadableType
 import com.facebook.react.uimanager.UIManagerHelper
-import com.instagramstory.events.PageScrollEvent
-import com.instagramstory.events.PageScrollStateChangedEvent
-import com.instagramstory.events.PageSelectedEvent
-import com.instagramstory.events.VideoBufferEvent
-import com.instagramstory.events.VideoEndEvent
-import com.instagramstory.events.VideoErrorEvent
-import com.instagramstory.events.VideoLoadEvent
-import com.instagramstory.events.VideoProgressEvent
+import com.androidstory.events.PageScrollEvent
+import com.androidstory.events.PageScrollStateChangedEvent
+import com.androidstory.events.PageSelectedEvent
+import com.androidstory.events.VideoBufferEvent
+import com.androidstory.events.VideoEndEvent
+import com.androidstory.events.VideoErrorEvent
+import com.androidstory.events.VideoLoadEvent
+import com.androidstory.events.VideoProgressEvent
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.IdentityHashMap
@@ -45,7 +45,7 @@ import java.util.concurrent.Executors
 import kotlin.math.abs
 import kotlin.math.max
 
-class InstagramStoryView(context: Context) : FrameLayout(context), LifecycleEventListener {
+class AndroidStoryView(context: Context) : FrameLayout(context), LifecycleEventListener {
 
   private enum class GestureAxis {
     NONE,
@@ -191,7 +191,7 @@ class InstagramStoryView(context: Context) : FrameLayout(context), LifecycleEven
         override fun onPageSelected(position: Int) {
           currentPageIndex = position
           refreshBoundHoldersPlayback()
-          dispatchEvent(PageSelectedEvent(getSurfaceId(), this@InstagramStoryView.id, position))
+          dispatchEvent(PageSelectedEvent(getSurfaceId(), this@AndroidStoryView.id, position))
         }
 
         override fun onPageScrolled(
@@ -202,7 +202,7 @@ class InstagramStoryView(context: Context) : FrameLayout(context), LifecycleEven
           dispatchEvent(
             PageScrollEvent(
               getSurfaceId(),
-              this@InstagramStoryView.id,
+              this@AndroidStoryView.id,
               position,
               positionOffset.toDouble()
             )
@@ -216,7 +216,7 @@ class InstagramStoryView(context: Context) : FrameLayout(context), LifecycleEven
             else -> "idle"
           }
           dispatchEvent(
-            PageScrollStateChangedEvent(getSurfaceId(), this@InstagramStoryView.id, stateName)
+            PageScrollStateChangedEvent(getSurfaceId(), this@AndroidStoryView.id, stateName)
           )
         }
       })
@@ -765,7 +765,7 @@ class InstagramStoryView(context: Context) : FrameLayout(context), LifecycleEven
           dispatchEvent(
             VideoProgressEvent(
               getSurfaceId(),
-              this@InstagramStoryView.id,
+              this@AndroidStoryView.id,
               boundPosition,
               posMs.toDouble(),
               durMs.toDouble()
@@ -1007,7 +1007,7 @@ class InstagramStoryView(context: Context) : FrameLayout(context), LifecycleEven
       val posAtPrep = boundPosition
       if (posAtPrep >= 0) {
         dispatchEvent(
-          VideoBufferEvent(getSurfaceId(), this@InstagramStoryView.id, posAtPrep, true)
+          VideoBufferEvent(getSurfaceId(), this@AndroidStoryView.id, posAtPrep, true)
         )
       }
 
@@ -1040,12 +1040,12 @@ class InstagramStoryView(context: Context) : FrameLayout(context), LifecycleEven
         val activePos = boundPosition
         if (activePos >= 0) {
           dispatchEvent(
-            VideoBufferEvent(getSurfaceId(), this@InstagramStoryView.id, activePos, false)
+            VideoBufferEvent(getSurfaceId(), this@AndroidStoryView.id, activePos, false)
           )
           dispatchEvent(
             VideoLoadEvent(
               getSurfaceId(),
-              this@InstagramStoryView.id,
+              this@AndroidStoryView.id,
               activePos,
               durationMs.toDouble(),
               videoWidth,
@@ -1077,14 +1077,14 @@ class InstagramStoryView(context: Context) : FrameLayout(context), LifecycleEven
           MediaPlayer.MEDIA_INFO_BUFFERING_START -> {
             if (activePos >= 0) {
               dispatchEvent(
-                VideoBufferEvent(getSurfaceId(), this@InstagramStoryView.id, activePos, true)
+                VideoBufferEvent(getSurfaceId(), this@AndroidStoryView.id, activePos, true)
               )
             }
           }
           MediaPlayer.MEDIA_INFO_BUFFERING_END -> {
             if (activePos >= 0) {
               dispatchEvent(
-                VideoBufferEvent(getSurfaceId(), this@InstagramStoryView.id, activePos, false)
+                VideoBufferEvent(getSurfaceId(), this@AndroidStoryView.id, activePos, false)
               )
             }
           }
@@ -1102,7 +1102,7 @@ class InstagramStoryView(context: Context) : FrameLayout(context), LifecycleEven
         val activePos = boundPosition
         if (activePos >= 0) {
           dispatchEvent(
-            VideoEndEvent(getSurfaceId(), this@InstagramStoryView.id, activePos, true)
+            VideoEndEvent(getSurfaceId(), this@AndroidStoryView.id, activePos, true)
           )
         }
       }
@@ -1114,12 +1114,12 @@ class InstagramStoryView(context: Context) : FrameLayout(context), LifecycleEven
         val activePos = boundPosition
         if (activePos >= 0) {
           dispatchEvent(
-            VideoBufferEvent(getSurfaceId(), this@InstagramStoryView.id, activePos, false)
+            VideoBufferEvent(getSurfaceId(), this@AndroidStoryView.id, activePos, false)
           )
           dispatchEvent(
             VideoErrorEvent(
               getSurfaceId(),
-              this@InstagramStoryView.id,
+              this@AndroidStoryView.id,
               activePos,
               "MediaPlayer error ($what, $extra)"
             )
@@ -1144,12 +1144,12 @@ class InstagramStoryView(context: Context) : FrameLayout(context), LifecycleEven
         stopProgressLoop()
         if (posAtPrep >= 0) {
           dispatchEvent(
-            VideoBufferEvent(getSurfaceId(), this@InstagramStoryView.id, posAtPrep, false)
+            VideoBufferEvent(getSurfaceId(), this@AndroidStoryView.id, posAtPrep, false)
           )
           dispatchEvent(
             VideoErrorEvent(
               getSurfaceId(),
-              this@InstagramStoryView.id,
+              this@AndroidStoryView.id,
               posAtPrep,
               t.message ?: "Failed to prepare video"
             )

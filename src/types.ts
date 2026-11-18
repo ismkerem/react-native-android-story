@@ -68,13 +68,13 @@ export interface StoryPageMediaConfig {
   muted?: boolean;
 }
 
-export interface InstagramStoryViewRef {
+export interface AndroidStoryViewRef {
   setPage: (selectedPage: number) => void;
   setPageWithoutAnimation: (selectedPage: number) => void;
   seekVideo: (position: number, positionMs: number) => void;
 }
 
-export interface InstagramStoryViewProps extends ViewProps {
+export interface AndroidStoryViewProps extends ViewProps {
   /**
    * Flexible story data object (or array of story objects) passed directly to the native view.
    * Supports custom backend JSON structures containing fundamental properties like `avatarUri`, `userUri`, and `imageUri`.
@@ -82,11 +82,11 @@ export interface InstagramStoryViewProps extends ViewProps {
   storyData?: Record<string, unknown> | readonly Record<string, unknown>[];
   /**
    * Per-page media configuration (image or video) for each page index.
-   * Useful when rendering pages inside the unified `InstagramStoryView` component.
+   * Useful when rendering pages inside the unified `AndroidStoryView` component.
    */
   pageMedia?: readonly StoryPageMediaConfig[];
   /**
-   * Explicit media type ('image' | 'video') when rendering standalone media directly in `InstagramStoryView`.
+   * Explicit media type ('image' | 'video') when rendering standalone media directly in `AndroidStoryView`.
    */
   mediaType?: StoryMediaType;
   /**
@@ -94,11 +94,11 @@ export interface InstagramStoryViewProps extends ViewProps {
    */
   source?: StoryMediaSource;
   /**
-   * Explicit standalone image source when rendering an image directly in `InstagramStoryView`.
+   * Explicit standalone image source when rendering an image directly in `AndroidStoryView`.
    */
   imageUri?: StoryImageSource;
   /**
-   * Explicit standalone video source when rendering a video directly in `InstagramStoryView`.
+   * Explicit standalone video source when rendering a video directly in `AndroidStoryView`.
    */
   videoUri?: StoryMediaSource;
   /**
@@ -285,7 +285,7 @@ export interface StoryItemSeenInfo<TStory, TItem> {
   isLastItem: boolean;
 }
 
-export interface InstagramStoryProps<
+export interface AndroidStoryProps<
   TStory extends Record<string, unknown> = StoryGroupData,
   TItem extends Record<string, unknown> = StoryItemData,
 > {

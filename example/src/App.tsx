@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native';
 import {
-  InstagramStory,
+  AndroidStory,
   resolveImageUri,
   resolveMediaUri,
   useStoryProgress,
@@ -319,7 +319,7 @@ export default function App() {
       />
 
       <View style={styles.feedContainer}>
-        <Text style={styles.appTitle}>Instagram Story Demo (Android)</Text>
+        <Text style={styles.appTitle}>Android Story Demo</Text>
 
         <ScrollView
           horizontal
@@ -766,7 +766,7 @@ export default function App() {
           ]}
           pointerEvents={visibleProp ? 'auto' : 'none'}
         >
-          <InstagramStory<DemoStoryUser, DemoStoryItem>
+          <AndroidStory<DemoStoryUser, DemoStoryItem>
             stories={orderedStories}
             visible={visibleProp}
             initialStoryIndex={activeInitialStoryIndex}
