@@ -34,10 +34,10 @@ Side-by-side 3D cube transition recordings and empirical measurements captured o
   <tbody>
     <tr>
       <td align="center">
-        <img src="./assets/benchmark-native.gif" width="240" alt="Native Fabric 3D Cube Transition Benchmark" />
+        <img src="https://raw.githubusercontent.com/ismkerem/react-native-android-story/main/assets/benchmark-native.gif" width="240" alt="Native Fabric 3D Cube Transition Benchmark" />
       </td>
       <td align="center">
-        <img src="./assets/benchmark-js.gif" width="240" alt="Pure JS 3D Cube Transition Benchmark" />
+        <img src="https://raw.githubusercontent.com/ismkerem/react-native-android-story/main/assets/benchmark-js.gif" width="240" alt="Pure JS 3D Cube Transition Benchmark" />
       </td>
     </tr>
     <tr>
@@ -84,26 +84,13 @@ Hardware UI / RenderThread metrics collected directly from Android Graphics Info
 
 ## Installation
 
-This package is not published on npm. You can install it directly from GitHub or embed it locally into your React Native Android app:
-
-### Option 1: Install from GitHub
-
 ```sh
-yarn add https://github.com/ismkerem/react-native-android-story.git
+npm install react-native-android-story
 # or
-npm install https://github.com/ismkerem/react-native-android-story.git
+yarn add react-native-android-story
 ```
 
-### Option 2: Embed locally in your app
-
-1. Clone or copy this repository into your project (for example, `packages/react-native-android-story`).
-2. Add it as a local dependency in your app's `package.json`:
-
-```json
-"react-native-android-story": "file:./packages/react-native-android-story"
-```
-
-3. Install dependencies and rebuild your Android app so React Native autolinking & Codegen compile the native `AndroidStoryView` Fabric component.
+After installing, rebuild your Android app so React Native autolinking & Codegen compile the native `AndroidStoryView` Fabric component.
 
 ### Requirements
 

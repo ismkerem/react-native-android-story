@@ -218,6 +218,26 @@ export function AndroidStory<
     durationMs: undefined,
   });
 
+  const [prevVisible, setPrevVisible] = useState(visible);
+  if (visible !== prevVisible) {
+    setPrevVisible(visible);
+    if (visible) {
+      setActiveStoryIndex(clampedInitialStory);
+      setItemIndices(buildInitialItemIndices(clampedInitialStory));
+      setIsHolding(false);
+      setIsSwipingDown(false);
+      setScrollState('idle');
+      setVideoState({
+        key: '',
+        hasExternalCallbacks: false,
+        isLoaded: false,
+        isBuffering: false,
+        hasError: false,
+        durationMs: undefined,
+      });
+    }
+  }
+
   const progressAnim = useRef(new Animated.Value(0)).current;
   const remainingRatioRef = useRef(1);
   const currentProgressRef = useRef(0);
@@ -225,6 +245,7 @@ export function AndroidStory<
   const activeKeyRef = useRef('');
   const lastSeenKeyRef = useRef('');
   const wasLongPressRef = useRef(false);
+  const isClosingRef = useRef(false);
   const preloadedVideoMetaRef = useRef<Record<string, PreloadedVideoMeta>>({});
   const startedBuiltInVideosRef = useRef<Set<string>>(new Set());
   const prevReplayTickRef = useRef(replayTick);
@@ -333,19 +354,14 @@ export function AndroidStory<
     [keyExtractor]
   );
 
-  // Reset state whenever visibility opens
+  // Reset refs and animations whenever visibility transitions
   const prevVisibleRef = useRef(visible);
+  const prevInitialStoryIndexRef = useRef(clampedInitialStory);
   useEffect(() => {
     if (visible && !prevVisibleRef.current) {
-      const nextInitial = Math.max(
-        0,
-        Math.min(initialStoryIndex, Math.max(0, stories.length - 1))
-      );
-      setActiveStoryIndex(nextInitial);
-      setItemIndices(buildInitialItemIndices(nextInitial));
-      setIsHolding(false);
-      setIsSwipingDown(false);
-      setScrollState('idle');
+      activeStoryIndexRef.current = clampedInitialStory;
+      prevInitialStoryIndexRef.current = clampedInitialStory;
+      isClosingRef.current = false;
       lastSeenKeyRef.current = '';
       preloadedVideoMetaRef.current = {};
       startedBuiltInVideosRef.current.clear();
@@ -354,14 +370,12 @@ export function AndroidStory<
       remainingRatioRef.current = 1;
       currentProgressRef.current = 0;
       skipStopSaveRef.current = false;
-      setVideoState({
-        key: '',
-        hasExternalCallbacks: false,
-        isLoaded: false,
-        isBuffering: false,
-        hasError: false,
-        durationMs: undefined,
-      });
+      translateY.setValue(0);
+      scale.setValue(1);
+      backdropOpacity.setValue(1);
+      overlayOpacity.setValue(1);
+    } else if (!visible && prevVisibleRef.current) {
+      isClosingRef.current = false;
       translateY.setValue(0);
       scale.setValue(1);
       backdropOpacity.setValue(1);
@@ -370,17 +384,14 @@ export function AndroidStory<
     prevVisibleRef.current = visible;
   }, [
     backdropOpacity,
-    buildInitialItemIndices,
-    initialStoryIndex,
+    clampedInitialStory,
     overlayOpacity,
     progressAnim,
     scale,
-    stories.length,
     translateY,
     visible,
   ]);
 
-  const prevInitialStoryIndexRef = useRef(clampedInitialStory);
   useEffect(() => {
     if (visible && prevInitialStoryIndexRef.current !== clampedInitialStory) {
       prevInitialStoryIndexRef.current = clampedInitialStory;
@@ -450,6 +461,8 @@ export function AndroidStory<
   ]);
 
   const closeWithAnimation = useCallback(() => {
+    if (isClosingRef.current) return;
+    isClosingRef.current = true;
     Animated.parallel([
       Animated.timing(translateY, {
         toValue: windowHeight,
@@ -462,6 +475,7 @@ export function AndroidStory<
         useNativeDriver: true,
       }),
     ]).start(() => {
+      isClosingRef.current = false;
       onClose?.();
     });
   }, [backdropOpacity, onClose, translateY, windowHeight]);

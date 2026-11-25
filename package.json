@@ -1,7 +1,6 @@
 {
   "name": "react-native-android-story",
   "version": "0.1.0",
-  "private": true,
   "description": "React Native Android Story library with native Fabric 3D cube transition",
   "main": "./lib/module/index.js",
   "types": "./lib/typescript/src/index.d.ts",
@@ -17,8 +16,6 @@
     "src",
     "lib",
     "android",
-    "cpp",
-    "react-native.config.js",
     "!android/build",
     "!android/gradle",
     "!android/gradlew",
@@ -39,7 +36,15 @@
   },
   "keywords": [
     "react-native",
-    "android"
+    "android",
+    "story",
+    "stories",
+    "instagram-story",
+    "fabric",
+    "new-architecture",
+    "3d-cube",
+    "viewpager2",
+    "video"
   ],
   "repository": {
     "type": "git",
@@ -124,7 +129,7 @@
       "customExportConditions": [
         "require",
         "react-native",
-        "<%- project.sourceCondition -%>"
+        "react-native-android-story-source"
       ]
     },
     "modulePathIgnorePatterns": [
