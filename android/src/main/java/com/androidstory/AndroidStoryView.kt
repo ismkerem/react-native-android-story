@@ -104,6 +104,7 @@ class AndroidStoryView(context: Context) : FrameLayout(context), LifecycleEventL
 
   private var initialPageIndex = 0
   private var hasAppliedInitialPage = false
+  private var hasUserInteracted = false
   private var currentPageIndex = 0
   private var perspectiveMultiplier = DEFAULT_PERSPECTIVE
   private var cubeRotationAngle = DEFAULT_CUBE_ANGLE
@@ -167,6 +168,46 @@ class AndroidStoryView(context: Context) : FrameLayout(context), LifecycleEventL
     }
   }
 
+  private val pageChangeCallback = object : ViewPager2.OnPageChangeCallback() {
+    override fun onPageSelected(position: Int) {
+      if (!hasAppliedInitialPage && initialPageIndex > 0 && position != initialPageIndex) {
+        return
+      }
+      currentPageIndex = position
+      refreshBoundHoldersPlayback()
+      dispatchEvent(PageSelectedEvent(getSurfaceId(), this@AndroidStoryView.id, position))
+    }
+
+    override fun onPageScrolled(
+      position: Int,
+      positionOffset: Float,
+      positionOffsetPixels: Int
+    ) {
+      dispatchEvent(
+        PageScrollEvent(
+          getSurfaceId(),
+          this@AndroidStoryView.id,
+          position,
+          positionOffset.toDouble()
+        )
+      )
+    }
+
+    override fun onPageScrollStateChanged(state: Int) {
+      if (state == ViewPager2.SCROLL_STATE_DRAGGING) {
+        hasUserInteracted = true
+      }
+      val stateName = when (state) {
+        ViewPager2.SCROLL_STATE_DRAGGING -> "dragging"
+        ViewPager2.SCROLL_STATE_SETTLING -> "settling"
+        else -> "idle"
+      }
+      dispatchEvent(
+        PageScrollStateChangedEvent(getSurfaceId(), this@AndroidStoryView.id, stateName)
+      )
+    }
+  }
+
   init {
     clipChildren = false
     clipToPadding = false
@@ -187,39 +228,7 @@ class AndroidStoryView(context: Context) : FrameLayout(context), LifecycleEventL
         overScrollMode = OVER_SCROLL_NEVER
       }
 
-      registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
-        override fun onPageSelected(position: Int) {
-          currentPageIndex = position
-          refreshBoundHoldersPlayback()
-          dispatchEvent(PageSelectedEvent(getSurfaceId(), this@AndroidStoryView.id, position))
-        }
-
-        override fun onPageScrolled(
-          position: Int,
-          positionOffset: Float,
-          positionOffsetPixels: Int
-        ) {
-          dispatchEvent(
-            PageScrollEvent(
-              getSurfaceId(),
-              this@AndroidStoryView.id,
-              position,
-              positionOffset.toDouble()
-            )
-          )
-        }
-
-        override fun onPageScrollStateChanged(state: Int) {
-          val stateName = when (state) {
-            ViewPager2.SCROLL_STATE_DRAGGING -> "dragging"
-            ViewPager2.SCROLL_STATE_SETTLING -> "settling"
-            else -> "idle"
-          }
-          dispatchEvent(
-            PageScrollStateChangedEvent(getSurfaceId(), this@AndroidStoryView.id, stateName)
-          )
-        }
-      })
+      registerOnPageChangeCallback(pageChangeCallback)
     }
 
     addView(
@@ -327,6 +336,12 @@ class AndroidStoryView(context: Context) : FrameLayout(context), LifecycleEventL
       usingReactChildren = pages.isNotEmpty()
       pagerAdapter.notifyItemRemoved(index)
     }
+    val effectiveCount = getEffectivePageCount()
+    if (effectiveCount == 0) {
+      currentPageIndex = 0
+    } else if (currentPageIndex >= effectiveCount) {
+      currentPageIndex = effectiveCount - 1
+    }
     requestLayout()
   }
 
@@ -337,6 +352,7 @@ class AndroidStoryView(context: Context) : FrameLayout(context), LifecycleEventL
     pages.clear()
     pageIds.clear()
     usingReactChildren = false
+    currentPageIndex = 0
     pagerAdapter.notifyDataSetChanged()
     requestLayout()
   }
@@ -454,7 +470,13 @@ class AndroidStoryView(context: Context) : FrameLayout(context), LifecycleEventL
   }
 
   fun setInitialPage(page: Int) {
-    initialPageIndex = max(0, page)
+    val nextInitial = max(0, page)
+    if (initialPageIndex != nextInitial) {
+      initialPageIndex = nextInitial
+      if (!hasUserInteracted) {
+        hasAppliedInitialPage = false
+      }
+    }
     applyInitialPageIfReady()
   }
 
@@ -492,6 +514,8 @@ class AndroidStoryView(context: Context) : FrameLayout(context), LifecycleEventL
   fun setCurrentPage(selectedPage: Int, animated: Boolean) {
     val count = getEffectivePageCount()
     if (selectedPage in 0 until count) {
+      hasUserInteracted = true
+      hasAppliedInitialPage = true
       currentPageIndex = selectedPage
       viewPager.setCurrentItem(selectedPage, animated)
       refreshBoundHoldersPlayback()
@@ -510,6 +534,9 @@ class AndroidStoryView(context: Context) : FrameLayout(context), LifecycleEventL
   fun release() {
     if (isReleased) return
     isReleased = true
+    isLayoutEnqueued = false
+    removeCallbacks(measureAndLayout)
+    viewPager.unregisterOnPageChangeCallback(pageChangeCallback)
     (context as? ReactContext)?.removeLifecycleEventListener(this)
     for (holder in boundHolders) {
       holder.mediaController.release()
@@ -707,6 +734,7 @@ class AndroidStoryView(context: Context) : FrameLayout(context), LifecycleEventL
   private fun getSurfaceId(): Int = UIManagerHelper.getSurfaceId(this)
 
   private fun dispatchEvent(event: com.facebook.react.uimanager.events.Event<*>) {
+    if (isReleased) return
     val reactContext = context as? ReactContext ?: return
     UIManagerHelper.getEventDispatcher(reactContext)?.dispatchEvent(event)
   }
@@ -1299,7 +1327,11 @@ class AndroidStoryView(context: Context) : FrameLayout(context), LifecycleEventL
         if (decoded != null) {
           bitmapCache.put(uri, decoded)
         }
-        mainHandler.post { callback(decoded) }
+        mainHandler.post {
+          if (!isReleased) {
+            callback(decoded)
+          }
+        }
       }
     }
 
